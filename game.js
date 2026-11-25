@@ -43,6 +43,16 @@
   let save = { packs: 0, owned: {}, best: -1 };
   try { const s = JSON.parse(localStorage.getItem(SET.saveKey)); if (s && s.owned) save = s; } catch (e) {}
   save.hits = Array.isArray(save.hits) ? save.hits : [];
+  // A new built-in set (SET.version changed): old pulls of built-in cards no longer match, so clear
+  // them. Cards made on the "Make cards" tab (ids starting with "c") are kept.
+  if ((save.setVersion || 1) !== (SET.version || 1)) {
+    const keep = (id) => String(id)[0] === "c";
+    Object.keys(save.owned).forEach((id) => { if (!keep(id)) delete save.owned[id]; });
+    save.hits = save.hits.filter((h) => keep(h.id));
+    save.counts = {}; save.best = -1; save.packs = 0;
+    save.setVersion = SET.version || 1;
+    try { localStorage.setItem(SET.saveKey, JSON.stringify(save)); } catch (e) {}
+  }
   save.counts = save.counts && typeof save.counts === "object" ? save.counts : {};
   const store = () => { try { localStorage.setItem(SET.saveKey, JSON.stringify(save)); } catch (e) {} };
 
@@ -119,7 +129,8 @@
     const initials = card.name.split(" ").map((w) => w[0]).join("").replace(/[^A-Za-z0-9]/g, "").slice(0, 2);
     const pic = hidden ? "" :
       `<img src="${esc(card.image)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'${initials}'}))">`;
-    return `<div class="card" style="--c:${color};--a:${picBg}">
+    const full = card.art ? card.art === "full" : !!r.fullArt;
+    return `<div class="card${full ? " full" : ""}" data-r="${esc(card.rarity)}"${r.frame ? ` data-frame="${esc(r.frame)}"` : ""} style="--c:${color};--a:${picBg}">
       <div class="top"><span class="name">${hidden ? "???" : esc(card.name)}</span><span>${esc(card.hp)} HP</span></div>
       <div class="pic">${pic}</div>
       <div class="move"><span>${esc(card.move)}</span><span>${esc(card.damage)}</span></div>
@@ -528,7 +539,7 @@
       setTimeout(() => { armed = false; b.textContent = "Reset collection"; }, 3000);
       return;
     }
-    save = { packs: 0, owned: {}, best: -1, hits: [], counts: {} };
+    save = { packs: 0, owned: {}, best: -1, hits: [], counts: {}, setVersion: SET.version || 1 };
     store(); armed = false; b.textContent = "Reset collection";
     renderBinder(); showPack();
   };

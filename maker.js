@@ -9,7 +9,9 @@
   const { esc, RARITIES, RARITY_KEYS, TYPES } = G;
   const typeNames = Object.keys(TYPES);
 
-  const blank = () => ({ id: null, name: "", type: typeNames[0] || "Normal", rarity: RARITY_KEYS[0], hp: 70, move: "Tackle", damage: 30, image: "" });
+  const blank = () => ({ id: null, name: "", type: typeNames[0] || "Normal", rarity: RARITY_KEYS[0], hp: 70, move: "Tackle", damage: 30, image: "", art: "" });
+  // "" = follow the rarity (full picture for the top rarities), "framed" or "full"
+  const artOf = (st) => st.art || (RARITIES[st.rarity]?.fullArt ? "full" : "framed");
   let s = blank();
   let batch = [];          // pictures waiting to become cards: [{ image, name }]
 
@@ -18,10 +20,12 @@
     if (!file.type.startsWith("image/")) return done(null);
     const url = URL.createObjectURL(file), im = new Image();
     im.onload = () => {
-      const W = 360, H = 270, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
-      const k = Math.max(W / im.width, H / im.height), cx = cv.getContext("2d");
+      // keep the picture's shape (so it works framed and full-card), longest side 640px
+      const k = Math.min(1, 640 / Math.max(im.width, im.height));
+      const W = Math.round(im.width * k), H = Math.round(im.height * k), cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+      const cx = cv.getContext("2d");
       cx.fillStyle = "#fff"; cx.fillRect(0, 0, W, H);
-      cx.drawImage(im, (W - im.width * k) / 2, (H - im.height * k) / 2, im.width * k, im.height * k);
+      cx.drawImage(im, 0, 0, W, H);
       URL.revokeObjectURL(url);
       done({ image: cv.toDataURL("image/jpeg", 0.82), name: file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim().slice(0, 18) });
     };
@@ -57,7 +61,7 @@
     s.damage = num($("mkDmg").value, 0, 0, 999);
   }
   const asCard = (extra = {}) => ({ id: s.id || "c", custom: true, name: s.name || "Your card", type: s.type, rarity: s.rarity,
-    hp: s.hp, move: s.move, damage: s.damage, image: s.image, ...extra });
+    hp: s.hp, move: s.move, damage: s.damage, image: s.image, art: artOf(s), ...extra });
 
   // ---------- Draw ----------
   const say = (t) => { $("mkMsg").innerHTML = t; };
@@ -68,7 +72,7 @@
     const shine = RARITIES[card.rarity]?.shine;
     $("mkPreview").className = "mk-card" + (shine ? " shine" : "");
     $("mkPreview").innerHTML = card.image ? G.cardHTML(card)
-      : G.cardHTML({ ...card, image: "" }).replace(/<div class="pic">[\s\S]*?<\/div>/, '<div class="pic"><span class="ph">+ picture</span></div>');
+      : G.cardHTML({ ...card, image: "" }).replace(/<div class="pic">[\s\S]*?<\/div>/, '<div class="pic" style="display:grid;place-items:center"><span class="ph">+ picture</span></div>');
     $("mkBatch").textContent = batch.length > 1
       ? `Batch of ${batch.length}: each picture becomes a card with these details, named after its file.` : "";
   }
@@ -79,6 +83,8 @@
     $("mkHp").value = s.hp; $("mkMove").value = s.move; $("mkDmg").value = s.damage;
     $("mkRarity").innerHTML = RARITY_KEYS.map((k) =>
       `<button type="button" class="chip" role="radio" aria-checked="${s.rarity === k}" data-r="${k}">${esc(RARITIES[k].symbol)} ${esc(RARITIES[k].label)}</button>`).join("");
+    $("mkArt").innerHTML = [["framed", "Framed picture"], ["full", "Picture fills the card"]].map(([v, l]) =>
+      `<button type="button" class="chip" role="radio" aria-checked="${artOf(s) === v}" data-art="${v}">${l}</button>`).join("");
     $("mkTitle").textContent = s.id ? "Edit card" : "Make a card";
     $("mkAdd").textContent = s.id ? "Save changes" : batch.length > 1 ? `Add ${batch.length} cards` : "Add card";
     $("mkDelete").hidden = !s.id;
@@ -106,7 +112,11 @@
   $("mkForm").addEventListener("change", () => { read(); paintPreview(); });
   $("mkRarity").addEventListener("click", (e) => {
     const b = e.target.closest("[data-r]"); if (!b) return;
-    read(); s.rarity = b.dataset.r; paintForm(); paintPreview();
+    read(); s.rarity = b.dataset.r; s.art = ""; paintForm(); paintPreview();
+  });
+  $("mkArt").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-art]"); if (!b) return;
+    read(); s.art = b.dataset.art; paintForm(); paintPreview();
   });
 
   const reset = () => { s = blank(); batch = []; $("mkFile").value = ""; $("mkDropT").textContent = "Choose or drop pictures"; };
@@ -132,7 +142,7 @@
     }
     if (!G.saveMyCards(list)) { say("Your browser's storage is full. Delete some cards and try again."); return; }
     const editing = !!s.id;
-    const keep = { type: s.type, rarity: s.rarity, hp: s.hp, move: s.move, damage: s.damage };
+    const keep = { type: s.type, rarity: s.rarity, hp: s.hp, move: s.move, damage: s.damage, art: s.art };
     reset(); Object.assign(s, editing ? {} : keep);          // keep settings handy for the next card
     say(editing ? "Card saved." : made.length > 1 ? `${made.length} cards added! <a href="#build">Put them in a pack →</a>`
       : `${esc(made[0].name)} added! <a href="#build">Put it in a pack →</a>`);
@@ -151,7 +161,7 @@
   $("mkMine").addEventListener("click", (e) => {
     const b = e.target.closest("[data-id]"); if (!b) return;
     const c = G.myCards.find((x) => x.id === b.dataset.id); if (!c) return;
-    batch = []; s = { id: c.id, name: c.name, type: c.type, rarity: c.rarity, hp: c.hp, move: c.move, damage: c.damage, image: c.image };
+    batch = []; s = { id: c.id, name: c.name, type: c.type, rarity: c.rarity, hp: c.hp, move: c.move, damage: c.damage, image: c.image, art: c.art || "" };
     $("mkDropT").textContent = "Choose a new picture (optional)";
     say(""); paint();
     $("mkForm").scrollIntoView({ behavior: "smooth", block: "start" });

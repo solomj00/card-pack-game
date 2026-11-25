@@ -7,12 +7,29 @@ Double-click `index.html`. It opens in your web browser, and you don't need to i
 | File | What it's for |
 |---|---|
 | `cards.js` | **Edit this one.** Set name, rarities and their odds, pack contents, types, and your list of cards. |
-| `images/` | Put your card pictures here. |
+| `images/` | Card pictures. The Dragon's Hoard art is here. |
+| `tools/make_art.py` | Draws the Dragon's Hoard art. |
 | `style.css` | Colours, fonts and layout. The **THEME** block at the bottom controls the colours. |
 | `game.js` | The game engine. You only need it to add new features. |
 | `builder.js` | The Build-a-pack workshop. |
 | `maker.js` | The Make-cards tab. |
 | `index.html` | The page itself. |
+
+## The built-in set: Dragon's Hoard
+The game ships with **Dragon's Hoard**, an original set of 26 cards: six evolution lines (Fire, Water, Grass, Electric, Ghost and Rock), two Normal cards, and the legendary Elder Aurex. The rarest cards have full-picture versions.
+
+All of the art is original and is drawn by `tools/make_art.py`. To change the colours or add creatures, edit that file and run `python3 tools/make_art.py`. It rewrites the pictures in `images/`.
+
+## Rarity tiers
+From most to least common: Common, Uncommon, Rare, Holo Rare, Ultra Rare, Full Art, Gallery, Illustration Rare, Special Illustration Rare and Secret Rare.
+- Full Art and everything rarer use the **full-picture layout**, where the art fills the whole card.
+- Special Illustration Rares get a rainbow frame, and Secret Rares get a gold frame.
+- To change the odds, labels, glow colours or effects, edit `RARITIES` in `cards.js`.
+
+## Full-picture cards
+In `cards.js`, add `art: "full"` to any card to make its picture fill the card, or `art: "framed"` to use the normal layout. Without it, the card follows its rarity. In the **Make cards** tab, the **Layout** switch does the same thing. Tall pictures work best for full-picture cards.
+
+When you replace the built-in cards, increase `version` in `SET`. Old pulls of built-in cards are then cleared so they don't point at the wrong cards. Cards made in the **Make cards** tab are kept.
 
 ## Add a card
 1. Put the picture in `images/`, for example `images/blaze.png` (png, jpg, svg and webp all work).

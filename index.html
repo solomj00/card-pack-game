@@ -6,7 +6,7 @@
   <title>Card Opening Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <canvas id="confetti" aria-hidden="true"></canvas>
@@ -86,6 +86,8 @@
               <label class="field">HP<input id="mkHp" type="number" inputmode="numeric" min="10" max="999" step="10" value="70"></label>
             </div>
             <div class="field">Rarity<div class="chips" id="mkRarity" role="radiogroup"></div></div>
+          <div class="field">Layout<div class="chips" id="mkArt" role="radiogroup"></div>
+            <small>The top rarities fill the whole card automatically. You can switch either way.</small></div>
             <div class="two">
               <label class="field">Move<input id="mkMove" maxlength="18" value="Tackle"></label>
               <label class="field">Damage<input id="mkDmg" type="number" inputmode="numeric" min="0" max="999" step="10" value="30"></label>
@@ -186,9 +188,9 @@
 </dialog>
 
 <!-- Load order matters: your cards first, then the game -->
-<script src="cards.js?v=6"></script>
-<script src="game.js?v=6"></script>
-<script src="builder.js?v=6"></script>
-<script src="maker.js?v=6"></script>
+<script src="cards.js?v=7"></script>
+<script src="game.js?v=7"></script>
+<script src="builder.js?v=7"></script>
+<script src="maker.js?v=7"></script>
 </body>
 </html>

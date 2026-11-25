@@ -451,7 +451,7 @@ kbd { background: var(--panel2); border: 1px solid var(--line); border-bottom-wi
 .results { width: 100%; }
 .results-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 auto 18px; max-width: 1000px; padding: 0 8px; }
 .results-head h2 { font: 700 22px var(--title-font); margin: 0; }
-.face.front { position: relative; }
+
 .rbadge { position: absolute; left: 8px; bottom: 30px; z-index: 3; display: inline-flex; align-items: center; gap: 6px;
   background: rgba(10, 14, 24, .88); color: #fff; font: 700 12px var(--body-font); padding: 3px 8px; border-radius: 6px; pointer-events: none; }
 .rbadge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--glow); }
@@ -568,3 +568,28 @@ dialog.dlg::backdrop { background: rgba(5, 8, 15, .72); backdrop-filter: blur(3p
 /* polish */
 .tile b span { font: inherit; color: inherit; }
 .face.front .rbadge { bottom: auto; top: 48%; }
+
+/* =====================  Full-picture cards  ===================== */
+/* The picture fills the whole card; name and move sit on top of it. */
+.card.full { padding: 0; background: #111; isolation: isolate; }
+.card.full .pic { position: absolute; inset: 0; margin: 0; border: 0; border-radius: inherit; aspect-ratio: auto; z-index: -1; background: var(--a); }
+.card.full .pic img { width: 100%; height: 100%; object-fit: cover; }
+.card.full .top { padding: 7px 9px 18px; color: #fff; background: linear-gradient(rgba(8, 6, 16, .7), rgba(8, 6, 16, 0)); border-radius: 12px 12px 0 0; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.card.full .move { margin: auto 8px 0; background: rgba(255, 255, 255, .86); color: var(--card-text); }
+.card.full .bottom { padding: 6px 9px 7px; color: #fff; background: linear-gradient(rgba(8, 6, 16, 0), rgba(8, 6, 16, .7)); border-radius: 0 0 12px 12px; text-shadow: 0 1px 2px rgba(0,0,0,.6); margin-top: 0; }
+.mini .card.full .bottom, .hit-card .card.full .bottom, .mk-mini .card.full .bottom { margin-top: auto; }
+.card.full .ph { color: #fff; }
+/* special frames */
+.card[data-frame]::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 4px; z-index: 2; pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.card[data-frame="rainbow"]::before { background: linear-gradient(135deg, #ff6ad5, #ffd84a, #7af6ff, #8dff9a, #c6a6ff, #ff6ad5); }
+.card[data-frame="gold"]::before { background: linear-gradient(135deg, #8a5a0c, #ffe9a8, #c58b14, #fff3c4, #a26d10); }
+.card[data-r="secret"] .top .name, .card[data-r="secret"] .top span { color: #ffe9a8; }
+/* long rarity names in the best-pull tile */
+#sBest { white-space: normal; font-size: clamp(17px, 1.6vw, 22px); line-height: 1.2; }
+.rate { grid-template-columns: minmax(8.5em, 12em) minmax(0, 1fr) 2.5em 3.2em; }
+/* softer foil so the art stays readable */
+.shine .card::after { opacity: .38; }
+.shine .card.full::after { opacity: .26; }
+.r-holo .card::after, .r-ultra .card::after { opacity: .38; }
