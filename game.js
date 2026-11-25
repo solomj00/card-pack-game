@@ -10,13 +10,16 @@
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Older cards.js files had one PACK instead of a PACKS list: still support that.
-  const PACK_LIST = (typeof PACKS !== "undefined" && PACKS.length) ? PACKS : [{
-    name: (typeof SET !== "undefined" && SET.packName) || "BOOSTER",
-    color: (typeof SET !== "undefined" && SET.packColor) || "#ffc929",
-    about: "",
-    slots: (typeof PACK !== "undefined" && PACK.length) ? PACK : [{ min: RARITY_KEYS[0] }, { min: RARITY_KEYS[0] }, { min: RARITY_KEYS[0] }],
-  }];
+  // Ready-made packs from cards.js (can be an empty list). Very old cards.js files
+  // had a single PACK instead: still support that.
+  const PACK_LIST = (typeof PACKS !== "undefined") ? PACKS
+    : (typeof PACK !== "undefined" && PACK.length) ? [{ name: (SET.packName || "BOOSTER"), color: (SET.packColor || "#ffc929"), slots: PACK }]
+    : [];
+
+  // Packs made in the Build-a-pack workshop (saved in this browser)
+  let myPacks = [];
+  try { const p = JSON.parse(localStorage.getItem(SET.saveKey + "-packs")); if (Array.isArray(p)) myPacks = p; } catch (e) {}
+  const allPacks = () => PACK_LIST.concat(myPacks);
 
   // Give every card an id (its position in the list)
   CARDS.forEach((card, i) => { card.id = i; });
@@ -117,11 +120,13 @@
     const p = pack.types ? CARDS.filter((c) => pack.types.includes(c.type)) : CARDS;
     return p.length ? p : CARDS;
   };
-  function pull(min, pool) {
+  // luck multiplies the weight of Rare and better (2 = twice as likely, and so on)
+  const weightOf = (k, luck = 1) => RARITIES[k].weight * (rank(k) >= 2 ? luck : 1);
+  function pull(min, pool, luck = 1) {
     const options = RARITY_KEYS.slice(Math.max(0, rank(min)));
-    let roll = Math.random() * options.reduce((t, k) => t + RARITIES[k].weight, 0);
+    let roll = Math.random() * options.reduce((t, k) => t + weightOf(k, luck), 0);
     let pick = options[0];
-    for (const k of options) { roll -= RARITIES[k].weight; if (roll <= 0) { pick = k; break; } }
+    for (const k of options) { roll -= weightOf(k, luck); if (roll <= 0) { pick = k; break; } }
     const target = rank(pick);
     const order = RARITY_KEYS.map((k, i) => i).sort((a, b) => Math.abs(a - target) - Math.abs(b - target) || a - b);
     for (const i of order) {
@@ -131,24 +136,52 @@
   }
 
   // =================== 1. Pick a pack ===================
-  function packHTML(pack, i) {
+  // Dark or light lettering, whichever reads better on the wrapper colour
+  function inkFor(hex) {
+    const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex || "");
+    if (!m) return "#1b1214";
+    const [r, g2, b] = m.slice(1).map((x) => parseInt(x, 16) / 255);
+    return 0.2126 * r + 0.7152 * g2 + 0.0722 * b > 0.55 ? "#1b1214" : "#fff8ee";
+  }
+  function coverOf(pack, i = 0) {
+    if (pack.coverImg) return pack.coverImg;                       // uploaded in the workshop
+    if (pack.coverCard != null && CARDS[pack.coverCard]) return CARDS[pack.coverCard].image;
+    if (pack.cover) return pack.cover;                             // set in cards.js
+    if (pack.coverMode === "none") return "";
     const pool = poolFor(pack);
-    const coverImg = pack.cover || (pool.length ? pool[(save.packs + i) % pool.length].image : "");
+    return pool.length ? pool[(save.packs + i) % pool.length].image : "";
+  }
+  function packFace(pack, i = 0) {
+    const c1 = pack.color || "#ffc929", c2 = pack.color2 || c1, img = coverOf(pack, i);
+    return `<div class="tear"></div><div class="pat" aria-hidden="true"></div>
+      <div class="cover${img ? "" : " empty"}">${img ? `<img src="${esc(img)}" alt="" onerror="this.remove()">` : ""}</div>
+      <div class="label">${esc(pack.name)}</div>
+      <div class="sub">${pack.slots.length} card${pack.slots.length === 1 ? "" : "s"}</div>
+      <div class="gloss" aria-hidden="true"></div>`;
+  }
+  const packAttrs = (pack) =>
+    `style="--pack:${esc(pack.color || "#ffc929")};--pack2:${esc(pack.color2 || pack.color || "#ffc929")};--pack-ink:${inkFor(pack.color2 || pack.color)}" data-pattern="${esc(pack.pattern || "crimp")}" data-finish="${esc(pack.finish || "matte")}"`;
+
+  function packHTML(pack, i) {
     return `<div class="pick">
-      <button class="pack" data-pack="${i}" style="--pack:${esc(pack.color || "#ffc929")}" aria-label="Open a ${esc(pack.name)} pack">
-        <div class="tear"></div>
-        <div class="cover">${coverImg ? `<img src="${esc(coverImg)}" alt="" onerror="this.remove()">` : ""}</div>
-        <div class="label">${esc(pack.name)}</div>
-        <div class="sub">${pack.slots.length} cards</div>
-      </button>
-      <p class="about">${esc(pack.about || "")}</p></div>`;
+      <button class="pack" data-pack="${i}" ${packAttrs(pack)} aria-label="Open a ${esc(pack.name)} pack">${packFace(pack, i)}</button>
+      <p class="about">${pack.mine ? '<span class="yours">Yours</span> ' : ""}${esc(pack.about || "")}</p></div>`;
   }
 
   function showPack() {
     if (!CARDS.length) { $("stage").innerHTML = `<p class="hint">Add cards in cards.js to start</p>`; return; }
+    if (!allPacks().length) {
+      $("stage").innerHTML = `<div class="empty-packs">
+        <div class="ghost-pack" aria-hidden="true"><span>?</span></div>
+        <h2>No packs yet</h2>
+        <p>Design your own booster in the workshop: pick the wrapper, the art, how many cards and how lucky it is.</p>
+        <a class="btn" href="#build">Build your first pack</a></div>`;
+      return;
+    }
     $("stage").innerHTML = `<div class="picker">
-      <p class="hint">${PACK_LIST.length > 1 ? "Choose a pack" : "Tap the pack to open it"}</p>
-      <div class="packs">${PACK_LIST.map(packHTML).join("")}</div></div>`;
+      <p class="hint">${allPacks().length > 1 ? "Choose a pack" : "Tap the pack to open it"}</p>
+      <div class="packs">${allPacks().map(packHTML).join("")}</div>
+      <p class="hint small"><a href="#build">Build another pack →</a></p></div>`;
     document.querySelectorAll(".pack").forEach((el) => { el.onclick = () => choose(el); });
   }
 
@@ -161,14 +194,14 @@
     await wait(calm || picks.length < 2 ? 0 : 320);
     picks.forEach((p) => p !== mine && (p.style.display = "none"));
     mine.classList.add("chosen");
-    openPack(PACK_LIST[+el.dataset.pack], el);
+    openPack(allPacks()[+el.dataset.pack], el);
   }
 
   async function openPack(packDef, pack) {
     // Pull the cards and save them right away, so leaving mid-reveal never loses a pull.
     // Cards are sorted so the rarest one is revealed last.
     const pool = poolFor(packDef);
-    const pulls = packDef.slots.map((slot) => pull(slot.min, pool)).sort((a, b) => rank(a.rarity) - rank(b.rarity));
+    const pulls = packDef.slots.map((slot) => pull(slot.min, pool, packDef.luck || 1)).sort((a, b) => rank(a.rarity) - rank(b.rarity));
     const seen = {};
     const isNew = pulls.map((c) => { const n = !save.owned[c.id] && !seen[c.id]; seen[c.id] = 1; return n; });
     save.packs++;
@@ -337,6 +370,24 @@
     save = { packs: 0, owned: {}, best: -1 };
     store(); armed = false; b.textContent = "Reset collection";
     renderBinder(); showPack();
+  };
+
+  // =================== Hooks used by builder.js ===================
+  window.CardGame = {
+    CARDS, RARITIES, RARITY_KEYS, TYPES, esc, rank, weightOf, poolFor, packFace, packAttrs,
+    get myPacks() { return myPacks; },
+    saveMyPacks(list) {
+      myPacks = list;
+      try { localStorage.setItem(SET.saveKey + "-packs", JSON.stringify(list)); return true; } catch (e) { return false; }
+    },
+    showPicker: showPack,
+    // Open a pack straight away (used by "Open it now")
+    openNow(pack) {
+      $("stage").innerHTML = `<div class="picker"><p class="hint" style="visibility:hidden">.</p><div class="packs">
+        <div class="pick chosen"><button class="pack" ${packAttrs(pack)}>${packFace(pack)}</button></div></div></div>`;
+      const el = $("stage").querySelector(".pack");
+      openPack(pack, el);
+    },
   };
 
   renderBinder();

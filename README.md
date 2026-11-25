@@ -10,6 +10,7 @@ Double-click `index.html`. It opens in your web browser, and you don't need to i
 | `images/` | Put your card pictures here. |
 | `style.css` | Colours, fonts and layout. The colours at the top change the whole look. |
 | `game.js` | The game engine. You only need it to add new features. |
+| `builder.js` | The Build-a-pack workshop. |
 | `index.html` | The page itself. |
 
 ## Add a card
@@ -26,14 +27,20 @@ Some tips:
 - If a picture doesn't show, check that the file name matches exactly, including capital letters and `.png` vs `.jpg`.
 - A card with a missing picture shows its initials, so you can test before you have the art.
 
-## Change the odds or the packs
+## Build a pack
+Players make their own packs on the **Build a pack** tab. They can choose:
+- **Wrapper:** the name, two colours, a pattern (stripes, dots, zigzag, burst or waves) and a finish (matte, glossy or holo foil).
+- **Cover art:** a surprise card, a card of their choice, an uploaded picture, or no art.
+- **Inside the pack:** 1 to 10 cards, a guaranteed hit (Rare, Holo or Ultra), luck (×2 or ×4 for Rare and better) and which card types it can contain.
+
+The workshop shows the live odds as you build. **Open it now** saves the pack and opens it straight away. Saved packs appear on the **Open packs** tab and can be edited or deleted from the workshop. They're stored in the player's browser.
+
+If there are no packs yet, the site starts in the workshop.
+
+## Odds and ready-made packs
 - **Odds:** change `weight` in `RARITIES`. Bigger numbers come up more often.
-- **Packs:** each entry in `PACKS` appears on the pack-picker screen. Copy one to make a new pack.
-  - `slots`: one line per card. Add or remove lines to change the pack size.
-  - `min`: the lowest rarity a slot can be. For example, `{ min: "holo" }` is a guaranteed holo or better.
-  - `types`: limits a pack to certain types, for example `types: ["Fire", "Water"]`. Leave it out to allow every card.
-  - `cover`: a picture for the pack wrapper. Leave it out to show one of the pack's cards.
-  - If a pack has no card at the rarity it rolls, it uses the closest rarity it does have.
+- **Ready-made packs (optional):** `PACKS` in `cards.js` is empty, so players build every pack themselves. To give everyone a starter pack, copy the example in the comments into the list.
+- If a pack has no card at the rarity it rolls, it uses the closest rarity it does have.
 
 ## Tune the pack opening
 Each rarity in `cards.js` has two extra settings:

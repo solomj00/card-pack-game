@@ -23,31 +23,22 @@ const RARITIES = {
   ultra:    { label: "Ultra Rare", weight: 1,  symbol: "✦",  shine: true,  glow: "#ffd84a", hype: 3 },
 };
 
-// ---- 3. Packs to choose from ----------------------------------------
-// Each pack shows up on the pack-picker screen.
-//   name:  printed on the pack
-//   color: wrapper colour
-//   about: short line shown under the pack
-//   types: (optional) only cards of these types can come out of this pack
-//   cover: (optional) picture on the pack, e.g. "images/cover.png"
-//          If you leave it out, one of the pack's cards is shown.
-//   slots: one entry per card. "min" is the lowest rarity that slot can be.
-// Add, remove or reorder packs freely.
-const PACKS = [
-  {
-    name: "BOOSTER", color: "#ffc929", about: "5 cards · 1 rare or better",
-    slots: [{ min: "common" }, { min: "common" }, { min: "common" }, { min: "uncommon" }, { min: "rare" }],
-  },
-  {
-    name: "ELEMENTS", color: "#ff8a5b", about: "Fire, Water & Grass only",
-    types: ["Fire", "Water", "Grass"],
-    slots: [{ min: "common" }, { min: "common" }, { min: "uncommon" }, { min: "uncommon" }, { min: "rare" }],
-  },
-  {
-    name: "PREMIUM", color: "#b79cf0", about: "3 cards · 1 holo or better",
-    slots: [{ min: "uncommon" }, { min: "rare" }, { min: "holo" }],
-  },
-];
+// ---- 3. Packs ----------------------------------------------------------
+// Players build their own packs in the "Build a pack" workshop on the site.
+// You can also put ready-made packs here and they'll show up for everyone,
+// next to the packs people build. Leave the list empty for build-only.
+//
+// Example (copy inside the [ ] to use it):
+//   {
+//     name: "BOOSTER", color: "#ffc929", color2: "#ff8a3d", about: "5 cards · 1 rare or better",
+//     pattern: "stripes",   // crimp, stripes, dots, zigzag, rays, waves, plain
+//     finish: "glossy",     // matte, glossy, holo
+//     types: ["Fire", "Water"],          // optional: only these types
+//     cover: "images/cover.png",         // optional: picture on the pack
+//     luck: 1,              // 1 normal, 2 = Rare and better twice as likely
+//     slots: [{ min: "common" }, { min: "common" }, { min: "common" }, { min: "uncommon" }, { min: "rare" }],
+//   },
+const PACKS = [];
 
 // ---- 4. Types (card colours) ----------------------------------------
 // Name: [card colour, picture background colour]. Add as many as you like.

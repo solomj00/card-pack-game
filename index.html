@@ -4,11 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Card Opening Game</title>
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <header>
-    <h1 id="setName">Card Set</h1>
+    <div class="brand">
+      <h1 id="setName">Card Set</h1>
+      <nav class="tabs" aria-label="Sections">
+        <a href="#" id="tabPlay" class="tab">Open packs</a>
+        <a href="#build" id="tabBuild" class="tab">Build a pack</a>
+      </nav>
+    </div>
     <div class="stats">
       <div class="stat"><b id="sPacks">0</b> packs</div>
       <div class="stat"><b id="sFound">0</b> / <span id="sTotal">0</span> found</div>
@@ -21,7 +27,58 @@
   <canvas id="confetti" aria-hidden="true"></canvas>
   <main class="stage" id="stage"></main>
 
-  <section class="binder">
+  <!-- Build-a-pack workshop (shown at #build) -->
+  <section class="workshop" id="workshop" hidden>
+    <div class="ws-inner">
+      <div class="ws-stage">
+        <div class="ws-spot" aria-hidden="true"></div>
+        <div class="ws-tilt" id="wsTilt"><div id="wsPreview"></div></div>
+        <div class="ws-odds" id="wsOdds" aria-live="polite"></div>
+      </div>
+
+      <form class="ws-panel" id="wsForm" autocomplete="off">
+        <div class="ws-head"><h2 id="wsTitle">Build your pack</h2><button type="button" class="link" id="wsNew">Start fresh</button></div>
+
+        <fieldset><legend>Wrapper</legend>
+          <label class="field">Pack name<input id="wsName" maxlength="14" value="MY PACK"></label>
+          <div class="field">Colours
+            <div class="swatches" id="wsSwatches"></div>
+            <div class="row"><label class="color">Main<input type="color" id="wsC1" value="#ff4f6d"></label>
+              <label class="color">Fade to<input type="color" id="wsC2" value="#ffc929"></label></div>
+          </div>
+          <div class="field">Pattern<div class="chips" id="wsPattern" role="radiogroup"></div></div>
+          <div class="field">Finish<div class="chips" id="wsFinish" role="radiogroup"></div></div>
+          <div class="field">Cover art
+            <div class="chips" id="wsCoverMode" role="radiogroup"></div>
+            <div class="thumbs" id="wsThumbs"></div>
+            <label class="upload" id="wsUploadL" hidden><input type="file" id="wsUpload" accept="image/*"><span id="wsUploadT">Choose a picture</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset><legend>Inside the pack</legend>
+          <label class="field">Cards in the pack <output id="wsCountOut">5</output>
+            <input type="range" id="wsCount" min="1" max="10" value="5"></label>
+          <label class="field">Guaranteed hit<select id="wsGuar"></select></label>
+          <div class="field">Luck<div class="chips" id="wsLuck" role="radiogroup"></div></div>
+          <div class="field">Card types<div class="chips" id="wsTypes"></div><small>None selected = every type.</small></div>
+        </fieldset>
+
+        <div class="ws-actions">
+          <button type="button" class="btn" id="wsOpen">Open it now</button>
+          <button type="button" class="btn alt" id="wsSave">Save to my packs</button>
+          <button type="button" class="btn ghost" id="wsDelete" hidden>Delete</button>
+        </div>
+        <p class="ws-msg" id="wsMsg" role="status"></p>
+      </form>
+    </div>
+
+    <div class="ws-mine" id="wsMineWrap" hidden>
+      <h2>Your packs</h2>
+      <div class="ws-mine-row" id="wsMine"></div>
+    </div>
+  </section>
+
+  <section class="binder" id="binder">
     <div class="inner">
       <div class="binder-head">
         <h2>Binder</h2>
@@ -33,7 +90,8 @@
   </section>
 
   <!-- Load order matters: your cards first, then the game -->
-  <script src="cards.js?v=3"></script>
-  <script src="game.js?v=3"></script>
+  <script src="cards.js?v=4"></script>
+  <script src="game.js?v=4"></script>
+  <script src="builder.js?v=4"></script>
 </body>
 </html>
