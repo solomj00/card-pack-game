@@ -129,6 +129,11 @@
     const initials = card.name.split(" ").map((w) => w[0]).join("").replace(/[^A-Za-z0-9]/g, "").slice(0, 2);
     const pic = hidden ? "" :
       `<img src="${esc(card.image)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'${initials}'}))">`;
+    // A finished card picture (already has its name and attacks): show the picture as the whole card
+    if (card.art === "card" && !hidden) {
+      return `<div class="card whole" data-r="${esc(card.rarity)}" style="--c:${color};--a:${picBg}">
+        <img src="${esc(card.image)}" alt="${esc(card.name)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'${initials}'}))"></div>`;
+    }
     const full = card.art ? card.art === "full" : !!r.fullArt;
     return `<div class="card${full ? " full" : ""}" data-r="${esc(card.rarity)}"${r.frame ? ` data-frame="${esc(r.frame)}"` : ""} style="--c:${color};--a:${picBg}">
       <div class="top"><span class="name">${hidden ? "???" : esc(card.name)}</span><span>${esc(card.hp)} HP</span></div>

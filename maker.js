@@ -27,7 +27,7 @@
       cx.fillStyle = "#fff"; cx.fillRect(0, 0, W, H);
       cx.drawImage(im, 0, 0, W, H);
       URL.revokeObjectURL(url);
-      done({ image: cv.toDataURL("image/jpeg", 0.82), name: file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim().slice(0, 18) });
+      done({ image: cv.toDataURL("image/jpeg", 0.8), cardShaped: Math.abs(im.width / im.height - 5 / 7) < 0.06, name: file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim().slice(0, 18) });
     };
     im.onerror = () => { URL.revokeObjectURL(url); done(null); };
     im.src = url;
@@ -40,6 +40,8 @@
     batch = (await Promise.all(files.map(shrink))).filter(Boolean);
     if (!batch.length) { say("Those files aren't pictures."); return; }
     say("");
+    // Pictures shaped like a card (about 5 by 7) are probably finished cards already
+    if (batch.every((b) => b.cardShaped)) s.art = "card";
     if (batch.length === 1) {
       s.image = batch[0].image;
       if (!s.name) s.name = batch[0].name;
@@ -73,6 +75,8 @@
     $("mkPreview").className = "mk-card" + (shine ? " shine" : "");
     $("mkPreview").innerHTML = card.image ? G.cardHTML(card)
       : G.cardHTML({ ...card, image: "" }).replace(/<div class="pic">[\s\S]*?<\/div>/, '<div class="pic" style="display:grid;place-items:center"><span class="ph">+ picture</span></div>');
+    if (!card.image && card.art === "card")
+      $("mkPreview").innerHTML = `<div class="card whole" style="display:grid;place-items:center;background:#1c2638;border:2px dashed #3a4864"><span class="ph" style="color:#8a96ad">+ finished card picture</span></div>`;
     $("mkBatch").textContent = batch.length > 1
       ? `Batch of ${batch.length}: each picture becomes a card with these details, named after its file.` : "";
   }
@@ -83,8 +87,12 @@
     $("mkHp").value = s.hp; $("mkMove").value = s.move; $("mkDmg").value = s.damage;
     $("mkRarity").innerHTML = RARITY_KEYS.map((k) =>
       `<button type="button" class="chip" role="radio" aria-checked="${s.rarity === k}" data-r="${k}">${esc(RARITIES[k].symbol)} ${esc(RARITIES[k].label)}</button>`).join("");
-    $("mkArt").innerHTML = [["framed", "Framed picture"], ["full", "Picture fills the card"]].map(([v, l]) =>
+    $("mkArt").innerHTML = [["framed", "Framed picture"], ["full", "Picture fills the card"], ["card", "Finished card"]].map(([v, l]) =>
       `<button type="button" class="chip" role="radio" aria-checked="${artOf(s) === v}" data-art="${v}">${l}</button>`).join("");
+    const whole = artOf(s) === "card";
+    $("mkHpL").hidden = whole; $("mkMoveRow").hidden = whole;
+    $("mkArtNote").textContent = whole ? "Your picture is used as the whole card, exactly as uploaded. Name, type and rarity are still used for packs and your collection."
+      : "The top rarities fill the whole card automatically. You can switch either way.";
     $("mkTitle").textContent = s.id ? "Edit card" : "Make a card";
     $("mkAdd").textContent = s.id ? "Save changes" : batch.length > 1 ? `Add ${batch.length} cards` : "Add card";
     $("mkDelete").hidden = !s.id;
@@ -112,7 +120,7 @@
   $("mkForm").addEventListener("change", () => { read(); paintPreview(); });
   $("mkRarity").addEventListener("click", (e) => {
     const b = e.target.closest("[data-r]"); if (!b) return;
-    read(); s.rarity = b.dataset.r; s.art = ""; paintForm(); paintPreview();
+    read(); s.rarity = b.dataset.r; if (s.art !== "card") s.art = ""; paintForm(); paintPreview();
   });
   $("mkArt").addEventListener("click", (e) => {
     const b = e.target.closest("[data-art]"); if (!b) return;

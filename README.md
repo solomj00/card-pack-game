@@ -50,7 +50,8 @@ On the **Make cards** tab, players turn their own pictures into cards. They can:
 - Upload one picture, or several at once for a batch. Each card in a batch is named after its file, and all of them get the details from the form.
 - Set the name, type, HP, rarity, move and damage, with a live preview.
 - Click any card under **Your cards** to edit or delete it.
-- Turn **Also use the sample cards** off so packs and the binder use only their own cards.
+- Set **Layout** to **Finished card** if a picture is already a complete card with its name and attacks printed on it. The picture is shown as the whole card, and the HP, move and damage fields are hidden. Card-shaped pictures (about 5 by 7) switch to this layout automatically.
+- Turn **Also use the sample cards** off (the built-in Dragon's Hoard cards) so packs and the binder use only their own cards.
 
 Pictures are shrunk before saving, so a browser can hold well over 100 cards. Cards are saved in that browser only. To give everyone the same cards, add them to `cards.js` instead (see "Add a card" above).
 
