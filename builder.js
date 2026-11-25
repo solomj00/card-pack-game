@@ -6,7 +6,7 @@
 {
   const G = window.CardGame;
   const $ = (id) => document.getElementById(id);
-  const { esc, RARITIES, RARITY_KEYS, TYPES, CARDS } = G;
+  const { esc, RARITIES, RARITY_KEYS, TYPES } = G;
 
   // ---------- Options ----------
   const PALETTES = [
@@ -88,12 +88,13 @@
     $("wsFinish").innerHTML = FINISHES.map(([v, l]) => chip("finish", v, l, s.finish === v)).join("");
     $("wsCoverMode").innerHTML = COVERS.map(([v, l]) => chip("coverMode", v, l, s.coverMode === v)).join("");
     $("wsLuck").innerHTML = LUCK.map(([v, l]) => chip("luck", v, l, s.luck === v)).join("");
+    const CARDS = G.cards;
     const types = Object.keys(TYPES).filter((t) => CARDS.some((c) => c.type === t));
     $("wsTypes").innerHTML = types.map((t) =>
       `<button type="button" class="chip" aria-pressed="${s.types.includes(t)}" data-type="${esc(t)}">${esc(t)}</button>`).join("");
     $("wsThumbs").hidden = s.coverMode !== "card";
     $("wsThumbs").innerHTML = CARDS.map((c) =>
-      `<button type="button" class="thumb" data-card="${c.id}" aria-pressed="${s.coverCard === c.id}" aria-label="${esc(c.name)}"><img src="${esc(c.image)}" alt="" onerror="this.remove()"><span>${esc(c.name)}</span></button>`).join("");
+      `<button type="button" class="thumb" data-card="${c.id}" aria-pressed="${String(s.coverCard) === String(c.id)}" aria-label="${esc(c.name)}"><img src="${esc(c.image)}" alt="" onerror="this.remove()"><span>${esc(c.name)}</span></button>`).join("");
     $("wsUploadL").hidden = s.coverMode !== "upload";
     $("wsCount").value = s.count; $("wsCountOut").textContent = s.count;
     $("wsGuar").innerHTML = `<option value="">No guarantee</option>` + RARITY_KEYS.slice(1).map((k) =>
@@ -121,14 +122,14 @@
     if (b.dataset.g) {
       const v = b.dataset.g === "luck" ? +b.dataset.v : b.dataset.v;
       s[b.dataset.g] = v;
-      if (b.dataset.g === "coverMode" && v === "card" && s.coverCard == null && CARDS[0]) s.coverCard = CARDS[0].id;
+      if (b.dataset.g === "coverMode" && v === "card" && s.coverCard == null && G.cards[0]) s.coverCard = G.cards[0].id;
       paintControls();
     } else if (b.dataset.type) {
       const t = b.dataset.type;
       s.types = s.types.includes(t) ? s.types.filter((x) => x !== t) : s.types.concat(t);
       paintControls();
     } else if (b.dataset.card != null) {
-      s.coverCard = +b.dataset.card; paintControls();
+      const c = G.byId(b.dataset.card); s.coverCard = c ? c.id : null; paintControls();
     } else if (b.dataset.i != null) {
       [s.color, s.color2] = PALETTES[+b.dataset.i]; paintControls();
     }
@@ -208,23 +209,30 @@
   });
   stage.addEventListener("pointerleave", () => { tilt.style.transform = ""; tilt.classList.remove("held"); });
 
-  // ---------- Switching between "Open packs" and "Build a pack" ----------
+  // ---------- Switching between "Open packs", "Make cards" and "Build a pack" ----------
   function go(view, render = true) {
-    const build = view === "build";
-    $("workshop").hidden = !build;
-    $("stage").hidden = build;
-    $("binder").hidden = build;
-    $("tabBuild").setAttribute("aria-current", build ? "page" : "false");
-    $("tabPlay").setAttribute("aria-current", build ? "false" : "page");
-    if (build) { paintControls(); paintMine(); }
-    else if (render && !document.querySelector("#stage .chosen, #stage .table, #stage .spread")) G.showPicker();
-    if (!build && location.hash === "#build") history.replaceState(null, "", location.pathname + location.search);
+    const play = view === "play";
+    $("workshop").hidden = view !== "build";
+    $("maker").hidden = view !== "make";
+    $("stage").hidden = !play;
+    $("binder").hidden = !play;
+    [["tabPlay", "play"], ["tabMake", "make"], ["tabBuild", "build"]].forEach(([id, v]) => $(id).setAttribute("aria-current", v === view ? "page" : "false"));
+    if (view === "build") { paintControls(); paintMine(); }
+    if (view === "make" && window.CardMaker) window.CardMaker.paint();
+    if (play && render && !document.querySelector("#stage .chosen, #stage .table, #stage .spread")) G.showPicker();
+    if (play && (location.hash === "#build" || location.hash === "#make")) history.replaceState(null, "", location.pathname + location.search);
   }
-  const route = () => go(location.hash === "#build" ? "build" : "play");
+  G.go = go;
+  const route = () => go(location.hash === "#build" ? "build" : location.hash === "#make" ? "make" : "play");
   addEventListener("hashchange", route);
   $("tabPlay").onclick = (e) => { e.preventDefault(); go("play"); G.showPicker(); };
 
-  // Nothing to open yet? Start in the workshop.
-  if (!G.myPacks.length && !(typeof PACKS !== "undefined" && PACKS.length) && location.hash !== "#build") location.hash = "#build";
-  else route();
+  // Nothing to open yet? Start where the player needs to go next.
+  // (maker.js loads after this file, so wait a moment before the first route.)
+  setTimeout(() => {
+    const noPacks = !G.myPacks.length && !(typeof PACKS !== "undefined" && PACKS.length);
+    if (!location.hash && !G.cards.length) location.hash = "#make";
+    else if (!location.hash && noPacks) location.hash = "#build";
+    else route();
+  });
 }

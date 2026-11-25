@@ -24,6 +24,18 @@
   // Give every card an id (its position in the list)
   CARDS.forEach((card, i) => { card.id = i; });
 
+  // Cards made on the "Make cards" tab (saved in this browser). Their ids start with "c".
+  let myCards = [];
+  try { const c = JSON.parse(localStorage.getItem(SET.saveKey + "-cards")); if (Array.isArray(c)) myCards = c; } catch (e) {}
+  const BUILT_IN = CARDS.length;
+  const syncCards = () => { CARDS.length = BUILT_IN; myCards.forEach((c) => { c.custom = true; CARDS.push(c); }); };
+  syncCards();
+  // Players can switch the sample cards from cards.js off and play with only their own
+  let useSamples = true;
+  try { useSamples = localStorage.getItem(SET.saveKey + "-samples") !== "off"; } catch (e) {}
+  const live = () => CARDS.filter((c) => c.custom || useSamples);
+  const byId = (id) => CARDS.find((c) => String(c.id) === String(id));
+
   // Make text safe to put into the page
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
 
@@ -108,7 +120,7 @@
       <div class="top"><span class="name">${hidden ? "???" : esc(card.name)}</span><span>${esc(card.hp)} HP</span></div>
       <div class="pic">${pic}</div>
       <div class="move"><span>${esc(card.move)}</span><span>${esc(card.damage)}</span></div>
-      <div class="bottom"><span>${esc(card.type)}</span><span title="${r.label}">${r.symbol} #${String(card.id + 1).padStart(3, "0")}</span></div>
+      <div class="bottom"><span>${esc(card.type)}</span><span title="${r.label}">${r.symbol} ${card.custom ? "Custom" : "#" + String(card.id + 1).padStart(3, "0")}</span></div>
     </div>`;
   }
 
@@ -117,8 +129,8 @@
   // from the pack's pool. If the pool has no card of that rarity, it uses the
   // closest rarity it does have.
   const poolFor = (pack) => {
-    const p = pack.types ? CARDS.filter((c) => pack.types.includes(c.type)) : CARDS;
-    return p.length ? p : CARDS;
+    const all = live(), p = pack.types ? all.filter((c) => pack.types.includes(c.type)) : all;
+    return p.length ? p : all;
   };
   // luck multiplies the weight of Rare and better (2 = twice as likely, and so on)
   const weightOf = (k, luck = 1) => RARITIES[k].weight * (rank(k) >= 2 ? luck : 1);
@@ -128,7 +140,10 @@
     let pick = options[0];
     for (const k of options) { roll -= weightOf(k, luck); if (roll <= 0) { pick = k; break; } }
     const target = rank(pick);
-    const order = RARITY_KEYS.map((k, i) => i).sort((a, b) => Math.abs(a - target) - Math.abs(b - target) || a - b);
+    // If the pool has nothing at that rarity, use the closest one that still honours the
+    // slot's minimum (so a guaranteed Rare never turns into a Common), then anything else.
+    const lo = Math.max(0, rank(min)), cost = (i) => (i < lo ? 100 + (lo - i) : Math.abs(i - target) * 2 - (i > target ? 1 : 0));
+    const order = RARITY_KEYS.map((k, i) => i).sort((a, b) => cost(a) - cost(b));
     for (const i of order) {
       const options2 = pool.filter((c) => rank(c.rarity) === i);
       if (options2.length) return options2[Math.floor(Math.random() * options2.length)];
@@ -145,7 +160,7 @@
   }
   function coverOf(pack, i = 0) {
     if (pack.coverImg) return pack.coverImg;                       // uploaded in the workshop
-    if (pack.coverCard != null && CARDS[pack.coverCard]) return CARDS[pack.coverCard].image;
+    if (pack.coverCard != null && byId(pack.coverCard)) return byId(pack.coverCard).image;
     if (pack.cover) return pack.cover;                             // set in cards.js
     if (pack.coverMode === "none") return "";
     const pool = poolFor(pack);
@@ -169,7 +184,12 @@
   }
 
   function showPack() {
-    if (!CARDS.length) { $("stage").innerHTML = `<p class="hint">Add cards in cards.js to start</p>`; return; }
+    if (!live().length) {
+      $("stage").innerHTML = `<div class="empty-packs"><div class="ghost-pack" aria-hidden="true"><span>+</span></div>
+        <h2>No cards yet</h2><p>Make some cards first, then build a pack to put them in.</p>
+        <a class="btn" href="#make">Make cards</a></div>`;
+      return;
+    }
     if (!allPacks().length) {
       $("stage").innerHTML = `<div class="empty-packs">
         <div class="ghost-pack" aria-hidden="true"><span>?</span></div>
@@ -339,6 +359,7 @@
   // =================== Binder ===================
   let filter = "All";
   function renderBinder() {
+    const CARDS = live();
     const found = CARDS.filter((c) => save.owned[c.id]).length;
     $("sPacks").textContent = save.packs;
     $("sFound").textContent = found;
@@ -374,7 +395,19 @@
 
   // =================== Hooks used by builder.js ===================
   window.CardGame = {
-    CARDS, RARITIES, RARITY_KEYS, TYPES, esc, rank, weightOf, poolFor, packFace, packAttrs,
+    RARITIES, RARITY_KEYS, TYPES, esc, rank, weightOf, poolFor, packFace, packAttrs, cardHTML, byId,
+    get cards() { return live(); },
+    get myCards() { return myCards; },
+    get useSamples() { return useSamples; },
+    saveMyCards(list) {
+      try { localStorage.setItem(SET.saveKey + "-cards", JSON.stringify(list)); } catch (e) { return false; }
+      myCards = list; syncCards(); renderBinder(); return true;
+    },
+    setUseSamples(on) {
+      useSamples = on;
+      try { localStorage.setItem(SET.saveKey + "-samples", on ? "on" : "off"); } catch (e) {}
+      renderBinder();
+    },
     get myPacks() { return myPacks; },
     saveMyPacks(list) {
       myPacks = list;

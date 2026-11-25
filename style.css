@@ -313,3 +313,33 @@ input[type="range"] { width: 100%; accent-color: var(--bg); min-height: 32px; }
   .big-pack .sub { bottom: 26px; }
 }
 @media (prefers-reduced-motion: reduce) { .ws-tilt { animation: none; } }
+
+/* =====================  Card maker  ===================== */
+.mk-card { width: 240px; height: 336px; border-radius: 12px; box-shadow: 0 40px 60px rgba(0,0,0,.55); }
+.mk-card .card { font-size: 15px; }
+.mk-card .card .name { font-size: 20px; }
+.mk-card .card .top, .mk-card .card .bottom { font-size: 14px; }
+.mk-card .ph { font: 20px var(--title-font); opacity: .45; }
+.mk-batch { max-width: 300px; text-align: center; font-weight: 700; margin: 0; min-height: 1.5em; }
+.two { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; }
+.field input[type="number"] { min-height: 44px; font: 600 16px var(--body-font); border-radius: 10px; border: 2px solid #d9d0c4; padding: 8px 12px; background: #fff; color: var(--ink); }
+.upload.big { min-height: 110px; font-size: 16px; }
+.upload.over { border-color: var(--ink); background: #fff; }
+.note { font-weight: 600; opacity: .7; margin-top: -6px; }
+.mk-mine-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.mk-mine-head h2 span { opacity: .6; font-size: .7em; }
+.switch { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; cursor: pointer; min-height: 44px; }
+.switch input { appearance: none; width: 50px; height: 28px; border-radius: 999px; background: rgba(255,255,255,.25); position: relative; cursor: pointer; margin: 0; flex: none; transition: background .2s; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.switch input:checked { background: var(--button); }
+.switch input:checked::after { transform: translateX(22px); }
+.switch input:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.mk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; margin-top: 16px; }
+.mk-mini { position: relative; aspect-ratio: 5/7; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 12px; text-align: left; }
+.mk-mini .card { height: 100%; }
+.mk-mini .move { display: none; }
+.mk-mini[aria-current="true"] { outline: 3px solid #fff; outline-offset: 3px; }
+.mk-mini:focus-visible { outline: 3px solid var(--button); outline-offset: 3px; }
+.mk-mini:hover { transform: translateY(-3px); }
+.mk-empty { opacity: .75; font-weight: 700; }
+@media (max-width: 860px) { .mk-card { width: 210px; height: 294px; } }

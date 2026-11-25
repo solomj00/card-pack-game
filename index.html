@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Card Opening Game</title>
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <header>
@@ -12,6 +12,7 @@
       <h1 id="setName">Card Set</h1>
       <nav class="tabs" aria-label="Sections">
         <a href="#" id="tabPlay" class="tab">Open packs</a>
+        <a href="#make" id="tabMake" class="tab">Make cards</a>
         <a href="#build" id="tabBuild" class="tab">Build a pack</a>
       </nav>
     </div>
@@ -26,6 +27,51 @@
   <!-- The pack and the opened cards appear here -->
   <canvas id="confetti" aria-hidden="true"></canvas>
   <main class="stage" id="stage"></main>
+
+  <!-- Card maker (shown at #make) -->
+  <section class="workshop maker" id="maker" hidden>
+    <div class="ws-inner">
+      <div class="ws-stage">
+        <div class="ws-spot" aria-hidden="true"></div>
+        <div class="ws-tilt" id="mkTilt"><div class="mk-card" id="mkPreview"></div></div>
+        <p class="mk-batch" id="mkBatch" aria-live="polite"></p>
+      </div>
+
+      <form class="ws-panel" id="mkForm" autocomplete="off">
+        <div class="ws-head"><h2 id="mkTitle">Make a card</h2><button type="button" class="link" id="mkNew">Start fresh</button></div>
+        <fieldset><legend>Picture</legend>
+          <label class="upload big" id="mkDrop"><input type="file" id="mkFile" accept="image/*" multiple>
+            <span id="mkDropT">Choose or drop pictures</span></label>
+          <small class="note">Pick several at once to make a batch. Each card is named after its file.</small>
+        </fieldset>
+        <fieldset><legend>Details</legend>
+          <label class="field">Name<input id="mkName" maxlength="18" placeholder="Card name"></label>
+          <div class="two">
+            <label class="field">Type<select id="mkType"></select></label>
+            <label class="field">HP<input id="mkHp" type="number" inputmode="numeric" min="10" max="999" step="10" value="70"></label>
+          </div>
+          <div class="field">Rarity<div class="chips" id="mkRarity" role="radiogroup"></div></div>
+          <div class="two">
+            <label class="field">Move<input id="mkMove" maxlength="18" value="Tackle"></label>
+            <label class="field">Damage<input id="mkDmg" type="number" inputmode="numeric" min="0" max="999" step="10" value="30"></label>
+          </div>
+        </fieldset>
+        <div class="ws-actions">
+          <button type="button" class="btn" id="mkAdd">Add card</button>
+          <button type="button" class="btn ghost" id="mkDelete" hidden>Delete</button>
+        </div>
+        <p class="ws-msg" id="mkMsg" role="status"></p>
+      </form>
+    </div>
+
+    <div class="ws-mine">
+      <div class="mk-mine-head">
+        <h2>Your cards <span id="mkCount"></span></h2>
+        <label class="switch"><input type="checkbox" id="mkSamples"><span>Also use the sample cards</span></label>
+      </div>
+      <div class="mk-grid" id="mkMine"></div>
+    </div>
+  </section>
 
   <!-- Build-a-pack workshop (shown at #build) -->
   <section class="workshop" id="workshop" hidden>
@@ -90,8 +136,9 @@
   </section>
 
   <!-- Load order matters: your cards first, then the game -->
-  <script src="cards.js?v=4"></script>
-  <script src="game.js?v=4"></script>
-  <script src="builder.js?v=4"></script>
+  <script src="cards.js?v=5"></script>
+  <script src="game.js?v=5"></script>
+  <script src="builder.js?v=5"></script>
+  <script src="maker.js?v=5"></script>
 </body>
 </html>

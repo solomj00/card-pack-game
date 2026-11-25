@@ -11,6 +11,7 @@ Double-click `index.html`. It opens in your web browser, and you don't need to i
 | `style.css` | Colours, fonts and layout. The colours at the top change the whole look. |
 | `game.js` | The game engine. You only need it to add new features. |
 | `builder.js` | The Build-a-pack workshop. |
+| `maker.js` | The Make-cards tab. |
 | `index.html` | The page itself. |
 
 ## Add a card
@@ -26,6 +27,15 @@ Some tips:
 - Remember the comma at the end of each card line.
 - If a picture doesn't show, check that the file name matches exactly, including capital letters and `.png` vs `.jpg`.
 - A card with a missing picture shows its initials, so you can test before you have the art.
+
+## Make cards
+On the **Make cards** tab, players turn their own pictures into cards. They can:
+- Upload one picture, or several at once for a batch. Each card in a batch is named after its file, and all of them get the details from the form.
+- Set the name, type, HP, rarity, move and damage, with a live preview.
+- Click any card under **Your cards** to edit or delete it.
+- Turn **Also use the sample cards** off so packs and the binder use only their own cards.
+
+Pictures are shrunk before saving, so a browser can hold well over 100 cards. Cards are saved in that browser only. To give everyone the same cards, add them to `cards.js` instead (see "Add a card" above).
 
 ## Build a pack
 Players make their own packs on the **Build a pack** tab. They can choose:
