@@ -13,7 +13,7 @@ Double-click `index.html`. It opens in your web browser, and you don't need to i
 | `index.html` | The page itself. |
 
 ## Add a card
-1. Put the picture in `images/`, for example `images/blaze.png`.
+1. Put the picture in `images/`, for example `images/blaze.png` (png, jpg, svg and webp all work).
 2. In `cards.js`, copy a line in the `CARDS` list and change it:
    ```js
    { name: "Blaze", type: "Fire", rarity: "rare", hp: 90, move: "Fire Spin", damage: 60, image: "images/blaze.png" },

@@ -51,13 +51,13 @@ const TYPES = {
 // If the picture is missing, the card shows a placeholder instead.
 // Copy a line and change it to add a card.
 const CARDS = [
-  { name: "Sample One",   type: "Fire",     rarity: "common",   hp: 50,  move: "Tackle",      damage: 20,  image: "images/sample-1.png" },
-  { name: "Sample Two",   type: "Water",    rarity: "common",   hp: 60,  move: "Splash",      damage: 20,  image: "images/sample-2.png" },
-  { name: "Sample Three", type: "Grass",    rarity: "common",   hp: 50,  move: "Leaf Toss",   damage: 10,  image: "images/sample-3.png" },
-  { name: "Sample Four",  type: "Electric", rarity: "common",   hp: 40,  move: "Zap",         damage: 20,  image: "images/sample-4.png" },
-  { name: "Sample Five",  type: "Rock",     rarity: "uncommon", hp: 80,  move: "Rock Throw",  damage: 40,  image: "images/sample-5.png" },
-  { name: "Sample Six",   type: "Ghost",    rarity: "uncommon", hp: 70,  move: "Spook",       damage: 40,  image: "images/sample-6.png" },
-  { name: "Sample Seven", type: "Fire",     rarity: "rare",     hp: 100, move: "Flame Burst", damage: 70,  image: "images/sample-7.png" },
-  { name: "Sample Eight", type: "Water",    rarity: "holo",     hp: 130, move: "Tidal Wave",  damage: 100, image: "images/sample-8.png" },
-  { name: "Sample Nine",  type: "Normal",   rarity: "ultra",    hp: 180, move: "Mega Strike", damage: 150, image: "images/sample-9.png" },
+  { name: "Sample One",   type: "Fire",     rarity: "common",   hp: 50,  move: "Tackle",      damage: 20,  image: "images/sample-1.svg" },
+  { name: "Sample Two",   type: "Water",    rarity: "common",   hp: 60,  move: "Splash",      damage: 20,  image: "images/sample-2.svg" },
+  { name: "Sample Three", type: "Grass",    rarity: "common",   hp: 50,  move: "Leaf Toss",   damage: 10,  image: "images/sample-3.svg" },
+  { name: "Sample Four",  type: "Electric", rarity: "common",   hp: 40,  move: "Zap",         damage: 20,  image: "images/sample-4.svg" },
+  { name: "Sample Five",  type: "Rock",     rarity: "uncommon", hp: 80,  move: "Rock Throw",  damage: 40,  image: "images/sample-5.svg" },
+  { name: "Sample Six",   type: "Ghost",    rarity: "uncommon", hp: 70,  move: "Spook",       damage: 40,  image: "images/sample-6.svg" },
+  { name: "Sample Seven", type: "Fire",     rarity: "rare",     hp: 100, move: "Flame Burst", damage: 70,  image: "images/sample-7.svg" },
+  { name: "Sample Eight", type: "Water",    rarity: "holo",     hp: 130, move: "Tidal Wave",  damage: 100, image: "images/sample-8.svg" },
+  { name: "Sample Nine",  type: "Normal",   rarity: "ultra",    hp: 180, move: "Mega Strike", damage: 150, image: "images/sample-9.svg" },
 ];
