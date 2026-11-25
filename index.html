@@ -4,141 +4,191 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Card Opening Game</title>
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <h1 id="setName">Card Set</h1>
-      <nav class="tabs" aria-label="Sections">
-        <a href="#" id="tabPlay" class="tab">Open packs</a>
-        <a href="#make" id="tabMake" class="tab">Make cards</a>
-        <a href="#build" id="tabBuild" class="tab">Build a pack</a>
-      </nav>
-    </div>
-    <div class="stats">
-      <div class="stat"><b id="sPacks">0</b> packs</div>
-      <div class="stat"><b id="sFound">0</b> / <span id="sTotal">0</span> found</div>
-      <div class="stat"><b id="sBest">—</b> best pull</div>
-      <button class="icon-btn" id="sound" aria-pressed="true">Sound: on</button>
-    </div>
-  </header>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<div class="app">
 
-  <!-- The pack and the opened cards appear here -->
-  <canvas id="confetti" aria-hidden="true"></canvas>
-  <main class="stage" id="stage"></main>
+  <!-- Sidebar (a top bar on phones) -->
+  <aside class="side">
+    <a class="logo" href="#"><span class="logo-mark" aria-hidden="true"><i></i><i></i><i></i></span><span id="setName">Card Set</span></a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#" id="tabPlay" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l-1 4H7zM7 7h10v14H7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Open packs</span></a>
+      <a href="#make" id="tabMake" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Make cards</span></a>
+      <a href="#build" id="tabBuild" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Build a pack</span></a>
+      <a href="#collection" id="tabCollection" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 5v16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Collection</span></a>
+    </nav>
+    <div class="side-foot">
+      <button class="side-btn" id="sound" aria-pressed="true">Sound: on</button>
+    </div>
+  </aside>
 
-  <!-- Card maker (shown at #make) -->
-  <section class="workshop maker" id="maker" hidden>
-    <div class="ws-inner">
-      <div class="ws-stage">
-        <div class="ws-spot" aria-hidden="true"></div>
-        <div class="ws-tilt" id="mkTilt"><div class="mk-card" id="mkPreview"></div></div>
-        <p class="mk-batch" id="mkBatch" aria-live="polite"></p>
+  <div class="main">
+    <!-- Banner made from a collage of your cards -->
+    <header class="hero" id="hero">
+      <div class="hero-collage" id="heroCollage" aria-hidden="true"></div>
+      <div class="hero-text">
+        <p class="eyebrow" id="heroEyebrow">Pack simulator</p>
+        <h1 id="heroTitle">Card Set</h1>
+        <p id="heroSub">Make your own cards, design your own boosters, then rip them open.</p>
+      </div>
+    </header>
+
+    <!-- Open packs -->
+    <section id="playView">
+      <div class="tiles">
+        <div class="tile"><div><span>Cards in set</span><b id="sTotal">0</b><small>Cards that can come out of packs</small></div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <div class="tile"><div><span>Packs opened</span><b id="sPacks">0</b><small>All time, this browser</small></div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l-1 4H7zM7 7h10v14H7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+        <div class="tile"><div><span>Found</span><b><span id="sFound">0</span><em id="sFoundOf"></em></b><small>Different cards collected</small></div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 5v16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+        <div class="tile"><div><span>Best pull</span><b id="sBest">—</b><small>Rarest card so far</small></div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
       </div>
 
-      <form class="ws-panel" id="mkForm" autocomplete="off">
-        <div class="ws-head"><h2 id="mkTitle">Make a card</h2><button type="button" class="link" id="mkNew">Start fresh</button></div>
-        <fieldset><legend>Picture</legend>
-          <label class="upload big" id="mkDrop"><input type="file" id="mkFile" accept="image/*" multiple>
-            <span id="mkDropT">Choose or drop pictures</span></label>
-          <small class="note">Pick several at once to make a batch. Each card is named after its file.</small>
-        </fieldset>
-        <fieldset><legend>Details</legend>
-          <label class="field">Name<input id="mkName" maxlength="18" placeholder="Card name"></label>
-          <div class="two">
-            <label class="field">Type<select id="mkType"></select></label>
-            <label class="field">HP<input id="mkHp" type="number" inputmode="numeric" min="10" max="999" step="10" value="70"></label>
-          </div>
-          <div class="field">Rarity<div class="chips" id="mkRarity" role="radiogroup"></div></div>
-          <div class="two">
-            <label class="field">Move<input id="mkMove" maxlength="18" value="Tackle"></label>
-            <label class="field">Damage<input id="mkDmg" type="number" inputmode="numeric" min="0" max="999" step="10" value="30"></label>
-          </div>
-        </fieldset>
-        <div class="ws-actions">
-          <button type="button" class="btn" id="mkAdd">Add card</button>
-          <button type="button" class="btn ghost" id="mkDelete" hidden>Delete</button>
+      <div class="toolbar">
+        <div class="seg" role="radiogroup" aria-label="Reveal style">
+          <button type="button" role="radio" data-mode="stack" id="modeStack">One by one</button>
+          <button type="button" role="radio" data-mode="grid" id="modeGrid">All at once</button>
         </div>
-        <p class="ws-msg" id="mkMsg" role="status"></p>
-      </form>
-    </div>
-
-    <div class="ws-mine">
-      <div class="mk-mine-head">
-        <h2>Your cards <span id="mkCount"></span></h2>
-        <label class="switch"><input type="checkbox" id="mkSamples"><span>Also use the sample cards</span></label>
-      </div>
-      <div class="mk-grid" id="mkMine"></div>
-    </div>
-  </section>
-
-  <!-- Build-a-pack workshop (shown at #build) -->
-  <section class="workshop" id="workshop" hidden>
-    <div class="ws-inner">
-      <div class="ws-stage">
-        <div class="ws-spot" aria-hidden="true"></div>
-        <div class="ws-tilt" id="wsTilt"><div id="wsPreview"></div></div>
-        <div class="ws-odds" id="wsOdds" aria-live="polite"></div>
+        <button type="button" class="btn alt" id="statsBtn">View stats</button>
+        <p class="kbd-hint">Press <kbd>Space</kbd> to open packs quickly</p>
       </div>
 
-      <form class="ws-panel" id="wsForm" autocomplete="off">
-        <div class="ws-head"><h2 id="wsTitle">Build your pack</h2><button type="button" class="link" id="wsNew">Start fresh</button></div>
+      <main class="stage" id="stage"></main>
 
-        <fieldset><legend>Wrapper</legend>
-          <label class="field">Pack name<input id="wsName" maxlength="14" value="MY PACK"></label>
-          <div class="field">Colours
-            <div class="swatches" id="wsSwatches"></div>
-            <div class="row"><label class="color">Main<input type="color" id="wsC1" value="#ff4f6d"></label>
-              <label class="color">Fade to<input type="color" id="wsC2" value="#ffc929"></label></div>
-          </div>
-          <div class="field">Pattern<div class="chips" id="wsPattern" role="radiogroup"></div></div>
-          <div class="field">Finish<div class="chips" id="wsFinish" role="radiogroup"></div></div>
-          <div class="field">Cover art
-            <div class="chips" id="wsCoverMode" role="radiogroup"></div>
-            <div class="thumbs" id="wsThumbs"></div>
-            <label class="upload" id="wsUploadL" hidden><input type="file" id="wsUpload" accept="image/*"><span id="wsUploadT">Choose a picture</span></label>
-          </div>
-        </fieldset>
+      <section class="panel hits">
+        <div class="panel-head"><div><h2>Card hits</h2><p>Rare and better cards pulled from your packs</p></div><span class="hit-count" id="hitCount"></span></div>
+        <div class="hit-grid" id="hits"></div>
+      </section>
+    </section>
 
-        <fieldset><legend>Inside the pack</legend>
-          <label class="field">Cards in the pack <output id="wsCountOut">5</output>
-            <input type="range" id="wsCount" min="1" max="10" value="5"></label>
-          <label class="field">Guaranteed hit<select id="wsGuar"></select></label>
-          <div class="field">Luck<div class="chips" id="wsLuck" role="radiogroup"></div></div>
-          <div class="field">Card types<div class="chips" id="wsTypes"></div><small>None selected = every type.</small></div>
-        </fieldset>
-
-        <div class="ws-actions">
-          <button type="button" class="btn" id="wsOpen">Open it now</button>
-          <button type="button" class="btn alt" id="wsSave">Save to my packs</button>
-          <button type="button" class="btn ghost" id="wsDelete" hidden>Delete</button>
+    <!-- Card maker (shown at #make) -->
+    <section class="workshop maker" id="maker" hidden>
+      <div class="ws-inner">
+        <div class="ws-stage">
+          <div class="ws-spot" aria-hidden="true"></div>
+          <div class="ws-tilt" id="mkTilt"><div class="mk-card" id="mkPreview"></div></div>
+          <p class="mk-batch" id="mkBatch" aria-live="polite"></p>
         </div>
-        <p class="ws-msg" id="wsMsg" role="status"></p>
-      </form>
-    </div>
 
-    <div class="ws-mine" id="wsMineWrap" hidden>
-      <h2>Your packs</h2>
-      <div class="ws-mine-row" id="wsMine"></div>
-    </div>
-  </section>
+        <form class="ws-panel" id="mkForm" autocomplete="off">
+          <div class="ws-head"><h2 id="mkTitle">Make a card</h2><button type="button" class="link" id="mkNew">Start fresh</button></div>
+          <fieldset><legend>Picture</legend>
+            <label class="upload big" id="mkDrop"><input type="file" id="mkFile" accept="image/*" multiple>
+              <span id="mkDropT">Choose or drop pictures</span></label>
+            <small class="note">Pick several at once to make a batch. Each card is named after its file.</small>
+          </fieldset>
+          <fieldset><legend>Details</legend>
+            <label class="field">Name<input id="mkName" maxlength="18" placeholder="Card name"></label>
+            <div class="two">
+              <label class="field">Type<select id="mkType"></select></label>
+              <label class="field">HP<input id="mkHp" type="number" inputmode="numeric" min="10" max="999" step="10" value="70"></label>
+            </div>
+            <div class="field">Rarity<div class="chips" id="mkRarity" role="radiogroup"></div></div>
+            <div class="two">
+              <label class="field">Move<input id="mkMove" maxlength="18" value="Tackle"></label>
+              <label class="field">Damage<input id="mkDmg" type="number" inputmode="numeric" min="0" max="999" step="10" value="30"></label>
+            </div>
+          </fieldset>
+          <div class="ws-actions">
+            <button type="button" class="btn" id="mkAdd">Add card</button>
+            <button type="button" class="btn ghost" id="mkDelete" hidden>Delete</button>
+          </div>
+          <p class="ws-msg" id="mkMsg" role="status"></p>
+        </form>
+      </div>
 
-  <section class="binder" id="binder">
-    <div class="inner">
+      <div class="ws-mine">
+        <div class="mk-mine-head">
+          <h2>Your cards <span id="mkCount"></span></h2>
+          <label class="switch"><input type="checkbox" id="mkSamples"><span>Also use the sample cards</span></label>
+        </div>
+        <div class="mk-grid" id="mkMine"></div>
+      </div>
+    </section>
+
+
+    <!-- Build-a-pack workshop (shown at #build) -->
+    <section class="workshop" id="workshop" hidden>
+      <div class="ws-inner">
+        <div class="ws-stage">
+          <div class="ws-spot" aria-hidden="true"></div>
+          <div class="ws-tilt" id="wsTilt"><div id="wsPreview"></div></div>
+          <div class="ws-odds" id="wsOdds" aria-live="polite"></div>
+        </div>
+
+        <form class="ws-panel" id="wsForm" autocomplete="off">
+          <div class="ws-head"><h2 id="wsTitle">Build your pack</h2><button type="button" class="link" id="wsNew">Start fresh</button></div>
+
+          <fieldset><legend>Wrapper</legend>
+            <label class="field">Pack name<input id="wsName" maxlength="14" value="MY PACK"></label>
+            <div class="field">Colours
+              <div class="swatches" id="wsSwatches"></div>
+              <div class="row"><label class="color">Main<input type="color" id="wsC1" value="#ff4f6d"></label>
+                <label class="color">Fade to<input type="color" id="wsC2" value="#ffc929"></label></div>
+            </div>
+            <div class="field">Pattern<div class="chips" id="wsPattern" role="radiogroup"></div></div>
+            <div class="field">Finish<div class="chips" id="wsFinish" role="radiogroup"></div></div>
+            <div class="field">Cover art
+              <div class="chips" id="wsCoverMode" role="radiogroup"></div>
+              <div class="thumbs" id="wsThumbs"></div>
+              <label class="upload" id="wsUploadL" hidden><input type="file" id="wsUpload" accept="image/*"><span id="wsUploadT">Choose a picture</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset><legend>Inside the pack</legend>
+            <label class="field">Cards in the pack <output id="wsCountOut">5</output>
+              <input type="range" id="wsCount" min="1" max="10" value="5"></label>
+            <label class="field">Guaranteed hit<select id="wsGuar"></select></label>
+            <div class="field">Luck<div class="chips" id="wsLuck" role="radiogroup"></div></div>
+            <div class="field">Card types<div class="chips" id="wsTypes"></div><small>None selected = every type.</small></div>
+          </fieldset>
+
+          <div class="ws-actions">
+            <button type="button" class="btn" id="wsOpen">Open it now</button>
+            <button type="button" class="btn alt" id="wsSave">Save to my packs</button>
+            <button type="button" class="btn ghost" id="wsDelete" hidden>Delete</button>
+          </div>
+          <p class="ws-msg" id="wsMsg" role="status"></p>
+        </form>
+      </div>
+
+      <div class="ws-mine" id="wsMineWrap" hidden>
+        <h2>Your packs</h2>
+        <div class="ws-mine-row" id="wsMine"></div>
+      </div>
+    </section>
+
+
+    <!-- Collection -->
+    <section class="panel binder" id="binder" hidden>
       <div class="binder-head">
-        <h2>Binder</h2>
+        <div><h2>Collection</h2><p class="muted" id="binderSub"></p></div>
         <div class="filters" id="filters"></div>
       </div>
       <div class="grid" id="grid"></div>
       <div class="actions"><button class="btn alt" id="reset">Reset collection</button></div>
-    </div>
-  </section>
+    </section>
+  </div>
+</div>
 
-  <!-- Load order matters: your cards first, then the game -->
-  <script src="cards.js?v=5"></script>
-  <script src="game.js?v=5"></script>
-  <script src="builder.js?v=5"></script>
-  <script src="maker.js?v=5"></script>
+<!-- Stats -->
+<dialog class="dlg" id="statsDlg" aria-labelledby="statsTitle">
+  <div class="dlg-head"><h2 id="statsTitle">Pack opening stats</h2><button class="x" type="button" data-close aria-label="Close">×</button></div>
+  <div id="statsBody"></div>
+</dialog>
+
+<!-- Booster box results -->
+<dialog class="dlg wide" id="boxDlg" aria-labelledby="boxTitle">
+  <div class="dlg-head"><h2 id="boxTitle">Booster box</h2><button class="x" type="button" data-close aria-label="Close">×</button></div>
+  <div id="boxBody"></div>
+</dialog>
+
+<!-- Load order matters: your cards first, then the game -->
+<script src="cards.js?v=6"></script>
+<script src="game.js?v=6"></script>
+<script src="builder.js?v=6"></script>
+<script src="maker.js?v=6"></script>
 </body>
 </html>

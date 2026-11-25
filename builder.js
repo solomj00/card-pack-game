@@ -214,18 +214,21 @@
     const play = view === "play";
     $("workshop").hidden = view !== "build";
     $("maker").hidden = view !== "make";
-    $("stage").hidden = !play;
-    $("binder").hidden = !play;
-    [["tabPlay", "play"], ["tabMake", "make"], ["tabBuild", "build"]].forEach(([id, v]) => $(id).setAttribute("aria-current", v === view ? "page" : "false"));
+    $("playView").hidden = !play;
+    $("binder").hidden = view !== "collection";
+    document.body.dataset.view = view;
+    [["tabPlay", "play"], ["tabMake", "make"], ["tabBuild", "build"], ["tabCollection", "collection"]]
+      .forEach(([id, v]) => $(id).setAttribute("aria-current", v === view ? "page" : "false"));
     if (view === "build") { paintControls(); paintMine(); }
     if (view === "make" && window.CardMaker) window.CardMaker.paint();
-    if (play && render && !document.querySelector("#stage .chosen, #stage .table, #stage .spread")) G.showPicker();
-    if (play && (location.hash === "#build" || location.hash === "#make")) history.replaceState(null, "", location.pathname + location.search);
+    if (play && render && !document.querySelector("#stage .chosen, #stage .table, #stage .results")) G.showPicker();
+    if (play && location.hash) history.replaceState(null, "", location.pathname + location.search);
   }
   G.go = go;
-  const route = () => go(location.hash === "#build" ? "build" : location.hash === "#make" ? "make" : "play");
+  const route = () => go({ "#build": "build", "#make": "make", "#collection": "collection" }[location.hash] || "play");
   addEventListener("hashchange", route);
   $("tabPlay").onclick = (e) => { e.preventDefault(); go("play"); G.showPicker(); };
+  document.querySelector(".logo").onclick = (e) => { e.preventDefault(); go("play"); G.showPicker(); };
 
   // Nothing to open yet? Start where the player needs to go next.
   // (maker.js loads after this file, so wait a moment before the first route.)

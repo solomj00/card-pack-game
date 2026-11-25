@@ -8,7 +8,7 @@ Double-click `index.html`. It opens in your web browser, and you don't need to i
 |---|---|
 | `cards.js` | **Edit this one.** Set name, rarities and their odds, pack contents, types, and your list of cards. |
 | `images/` | Put your card pictures here. |
-| `style.css` | Colours, fonts and layout. The colours at the top change the whole look. |
+| `style.css` | Colours, fonts and layout. The **THEME** block at the bottom controls the colours. |
 | `game.js` | The game engine. You only need it to add new features. |
 | `builder.js` | The Build-a-pack workshop. |
 | `maker.js` | The Make-cards tab. |
@@ -51,6 +51,17 @@ If there are no packs yet, the site starts in the workshop.
 - **Odds:** change `weight` in `RARITIES`. Bigger numbers come up more often.
 - **Ready-made packs (optional):** `PACKS` in `cards.js` is empty, so players build every pack themselves. To give everyone a starter pack, copy the example in the comments into the list.
 - If a pack has no card at the rarity it rolls, it uses the closest rarity it does have.
+
+## Opening packs
+- **Reveal style:** **One by one** shows a stack you tap through, rarest card last. **All at once** lays every card out face down and flips them in a row. The site remembers your choice.
+- **Space bar:** opens a pack, reveals the next card, or opens another of the same pack.
+- **Open a box of 10:** the button under each pack opens 10 at once and shows every hit.
+- **Card hits:** your Rare-and-better pulls, newest first, under the pack area.
+- **View stats:** packs opened, cards pulled, and your pull rate for each rarity.
+- **Collection:** your binder, on its own tab.
+
+## Colours and look
+The theme colours are at the bottom of `style.css`, under **THEME**. Change `--accent` to recolour every button and highlight.
 
 ## Tune the pack opening
 Each rarity in `cards.js` has two extra settings:

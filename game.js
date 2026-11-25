@@ -42,11 +42,14 @@
   // ---------- Saving ----------
   let save = { packs: 0, owned: {}, best: -1 };
   try { const s = JSON.parse(localStorage.getItem(SET.saveKey)); if (s && s.owned) save = s; } catch (e) {}
+  save.hits = Array.isArray(save.hits) ? save.hits : [];
+  save.counts = save.counts && typeof save.counts === "object" ? save.counts : {};
   const store = () => { try { localStorage.setItem(SET.saveKey, JSON.stringify(save)); } catch (e) {} };
 
   // ---------- Apply set settings ----------
   document.title = SET.name;
   $("setName").textContent = SET.name;
+  $("heroTitle").textContent = SET.name;
   document.documentElement.style.setProperty("--card-back", SET.cardBack);
 
   // =================== Sound (made in code, no files needed) ===================
@@ -180,21 +183,23 @@
   function packHTML(pack, i) {
     return `<div class="pick">
       <button class="pack" data-pack="${i}" ${packAttrs(pack)} aria-label="Open a ${esc(pack.name)} pack">${packFace(pack, i)}</button>
-      <p class="about">${pack.mine ? '<span class="yours">Yours</span> ' : ""}${esc(pack.about || "")}</p></div>`;
+      <p class="about">${pack.mine ? '<span class="yours">Yours</span> ' : ""}${esc(pack.about || "")}</p>
+      <button type="button" class="mini-btn" data-box="${i}">Open a box of 10</button></div>`;
   }
 
+  // What the Space key does right now (changes with each screen)
+  let spaceAction = null;
+  let lastPack = null;
+
   function showPack() {
+    spaceAction = null;
     if (!live().length) {
-      $("stage").innerHTML = `<div class="empty-packs"><div class="ghost-pack" aria-hidden="true"><span>+</span></div>
-        <h2>No cards yet</h2><p>Make some cards first, then build a pack to put them in.</p>
-        <a class="btn" href="#make">Make cards</a></div>`;
+      $("stage").innerHTML = `<div class="empty-packs">${STEPS(1)}
+        <a class="btn" href="#make">Make your first card</a></div>`;
       return;
     }
     if (!allPacks().length) {
-      $("stage").innerHTML = `<div class="empty-packs">
-        <div class="ghost-pack" aria-hidden="true"><span>?</span></div>
-        <h2>No packs yet</h2>
-        <p>Design your own booster in the workshop: pick the wrapper, the art, how many cards and how lucky it is.</p>
+      $("stage").innerHTML = `<div class="empty-packs">${STEPS(2)}
         <a class="btn" href="#build">Build your first pack</a></div>`;
       return;
     }
@@ -202,37 +207,75 @@
       <p class="hint">${allPacks().length > 1 ? "Choose a pack" : "Tap the pack to open it"}</p>
       <div class="packs">${allPacks().map(packHTML).join("")}</div>
       <p class="hint small"><a href="#build">Build another pack →</a></p></div>`;
-    document.querySelectorAll(".pack").forEach((el) => { el.onclick = () => choose(el); });
+    document.querySelectorAll("#stage .pack").forEach((el) => { el.onclick = () => choose(el); });
+    document.querySelectorAll("#stage [data-box]").forEach((b) => { b.onclick = () => openBox(allPacks()[+b.dataset.box]); });
+    spaceAction = () => {
+      const packs = allPacks(), i = Math.max(0, packs.indexOf(lastPack));
+      const el = document.querySelector(`#stage .pack[data-pack="${i}"]`);
+      if (el) choose(el);
+    };
   }
 
+  // The 3-step guide shown before there's anything to open
+  const STEPS = (now) => `<ol class="steps">${[
+    ["Make cards", "Upload pictures and turn them into cards.", "#make"],
+    ["Build a pack", "Pick the wrapper, how many cards and how lucky.", "#build"],
+    ["Open packs", "Rip it open and chase the rare pulls.", "#"],
+  ].map(([t, d, href], i) => `<li class="${i + 1 === now ? "now" : i + 1 < now ? "done" : ""}"><span class="num">${i + 1 < now ? "✓" : i + 1}</span>
+      <div><b>${t}</b><p>${d}</p></div></li>`).join("")}</ol>`;
+
   async function choose(el) {
-    const picks = [...document.querySelectorAll(".pick")];
-    document.querySelectorAll(".pack").forEach((p) => (p.onclick = null));
+    spaceAction = null;
+    const picks = [...document.querySelectorAll("#stage .pick")];
+    document.querySelectorAll("#stage .pack, #stage [data-box]").forEach((p) => (p.onclick = null));
     const mine = el.closest(".pick");
     picks.forEach((p) => p !== mine && p.classList.add("fade"));
-    $("stage").querySelector(".hint").style.visibility = "hidden";
+    $("stage").querySelectorAll(".hint").forEach((h) => (h.style.visibility = "hidden"));
     await wait(calm || picks.length < 2 ? 0 : 320);
     picks.forEach((p) => p !== mine && (p.style.display = "none"));
     mine.classList.add("chosen");
     openPack(allPacks()[+el.dataset.pack], el);
   }
 
-  async function openPack(packDef, pack) {
-    // Pull the cards and save them right away, so leaving mid-reveal never loses a pull.
-    // Cards are sorted so the rarest one is revealed last.
+  // Roll the cards for one pack and save them (so leaving mid-reveal never loses a pull).
+  // Cards come back sorted so the rarest one is revealed last.
+  function rollPack(packDef) {
     const pool = poolFor(packDef);
-    const pulls = packDef.slots.map((slot) => pull(slot.min, pool, packDef.luck || 1)).sort((a, b) => rank(a.rarity) - rank(b.rarity));
+    const pulls = packDef.slots.map((slot) => pull(slot.min, pool, packDef.luck || 1)).filter(Boolean)
+      .sort((a, b) => rank(a.rarity) - rank(b.rarity));
     const seen = {};
     const isNew = pulls.map((c) => { const n = !save.owned[c.id] && !seen[c.id]; seen[c.id] = 1; return n; });
     save.packs++;
-    pulls.forEach((c) => { save.owned[c.id] = (save.owned[c.id] || 0) + 1; save.best = Math.max(save.best, rank(c.rarity)); });
-    store();
+    pulls.forEach((c) => {
+      save.owned[c.id] = (save.owned[c.id] || 0) + 1;
+      save.best = Math.max(save.best, rank(c.rarity));
+      save.counts[c.rarity] = (save.counts[c.rarity] || 0) + 1;
+      if (rank(c.rarity) >= 2) save.hits.unshift({ id: c.id, pack: packDef.name, t: Date.now() });
+    });
+    save.hits.length = Math.min(save.hits.length, 60);
+    return { pulls, isNew };
+  }
 
+  async function openPack(packDef, pack) {
+    spaceAction = null;
+    lastPack = packDef;
+    const { pulls, isNew } = rollPack(packDef);
+    store();
     await wait(calm ? 0 : 150);
     sfx.shake(); pack.classList.add("shake"); await wait(calm ? 0 : 450);
     pack.classList.remove("shake"); sfx.tear(); pack.classList.add("torn"); await wait(calm ? 0 : 550);
     pack.classList.add("gone"); await wait(calm ? 0 : 400);
-    showStack(pulls, isNew);
+    if (revealMode === "grid") showSummary(pulls, isNew, true);
+    else showStack(pulls, isNew);
+  }
+
+  // Celebrate a card as it flips (shared by both reveal styles)
+  function celebrate(r) {
+    const h = r.hype || 0;
+    if (!h) return;
+    sfx.hype(h);
+    if (h >= 2) confetti(h >= 3 ? 220 : 90, [r.glow || "#fff", "#ffffff", "#ff2e7e", "#7af6ff"]);
+    if (h >= 3) flash();
   }
 
   // =================== 2. Reveal one card at a time ===================
@@ -285,10 +328,8 @@
       if (h > 0 && !skipping) {
         call.className = "call loud"; call.style.setProperty("--glow", r.glow || "#fff");
         call.textContent = r.label.toUpperCase() + "!" + (fresh ? " New!" : "");
-        sfx.hype(h);
         if (h >= 2) { const rays = document.createElement("div"); rays.className = "rays"; rays.style.setProperty("--glow", r.glow || "#fff"); pile.append(rays); }
-        if (h >= 2) confetti(h >= 3 ? 220 : 90, [r.glow || "#fff", "#ffffff", "#ffc929", "#7af6ff"]);
-        if (h >= 3) flash();
+        celebrate(r);
       } else {
         call.textContent = r.label + (fresh ? " · New!" : "");
       }
@@ -314,13 +355,14 @@
       busy = true;
       tuck();
       if (next < pulls.length) { await reveal(); busy = false; }
-      else { await wait(250); showSummary(pulls, isNew); }
+      else { spaceAction = null; await wait(250); showSummary(pulls, isNew); }
     }
 
     pile.onclick = step;
+    spaceAction = step;
     $("skip").onclick = async () => {
       if (skipping) return;
-      skipping = true;
+      skipping = true; spaceAction = null;
       $("skip").disabled = true;
       while (busy) await wait(50);
       busy = true;
@@ -330,30 +372,124 @@
     };
   }
 
-  // =================== 3. Summary ===================
-  function showSummary(pulls, isNew) {
+  // =================== 3. Summary (and the "All at once" reveal) ===================
+  const badge = (r) => `<span class="rbadge" style="--glow:${esc(r.glow || "#8e9ab0")}">${esc(r.label)}</span>`;
+
+  async function showSummary(pulls, isNew, animate = false) {
+    spaceAction = null;
     const bestRank = Math.max(...pulls.map((c) => rank(c.rarity)));
-    $("stage").innerHTML = `<div>
+    $("stage").innerHTML = `<div class="results">
+      <div class="results-head"><h2>${esc(lastPack ? lastPack.name : "Pack")} contents</h2>
+        ${animate ? '<button type="button" class="btn alt small" id="skipGrid">Skip</button>' : ""}</div>
       <div class="spread">${pulls.map((c, i) => {
         const r = rarityOf(c), best = rank(c.rarity) === bestRank && (r.hype || 0) > 0;
         return `<div>
-          <div class="slot open${r.shine ? " shine" : ""}${best ? " best" : ""}" style="--glow:${r.glow || "#fff"}">
-            <div class="flip"><div class="face back"></div><div class="face front">${cardHTML(c)}</div></div>
+          <div class="slot${animate ? "" : " open"}${r.shine ? " shine" : ""}${best ? " best" : ""}" style="--glow:${esc(r.glow || "#fff")}">
+            <div class="flip"><div class="face back"></div><div class="face front">${cardHTML(c)}${badge(r)}</div></div>
           </div>
-          <div class="tag" style="opacity:1">${r.label}${isNew[i] ? ' · <span class="newtag">New!</span>' : ""}</div></div>`;
+          <div class="tag"${animate ? "" : ' style="opacity:1"'}>${isNew[i] ? '<span class="newtag">New!</span>' : "&nbsp;"}</div></div>`;
       }).join("")}</div>
-      <div class="actions"><button class="btn" id="again">Choose another pack</button></div></div>`;
-    document.querySelectorAll(".slot").forEach((slot) => {
+      <div class="actions" id="resultActions"${animate ? " hidden" : ""}>
+        ${lastPack ? `<button class="btn" id="again">Open another ${esc(lastPack.name)}</button>` : ""}
+        <button class="btn alt" id="choose">Choose a different pack</button></div></div>`;
+    const slots = [...document.querySelectorAll("#stage .slot")];
+    slots.forEach((slot) => {
       slot.onpointermove = (e) => {
         const b = slot.getBoundingClientRect();
         slot.style.setProperty("--hx", ((e.clientX - b.left) / b.width) * 100 + "%");
         slot.style.setProperty("--hy", ((e.clientY - b.top) / b.height) * 100 + "%");
       };
     });
+
+    if (animate) {
+      // flip the cards over one after another; rare ones glow first
+      let skip = false;
+      $("skipGrid").onclick = () => { skip = true; };
+      spaceAction = () => { skip = true; };
+      for (let i = 0; i < slots.length; i++) {
+        const r = rarityOf(pulls[i]), h = r.hype || 0;
+        if (!skip && h > 0 && r.glow) { slots[i].classList.add("charge"); sfx.charge(); await wait(calm ? 0 : 350 + h * 250); slots[i].classList.remove("charge"); }
+        slots[i].classList.add("open");
+        slots[i].nextElementSibling.style.opacity = 1;
+        if (!skip) { sfx.flip(); celebrate(r); await wait(calm ? 0 : 260); }
+      }
+      $("skipGrid")?.remove();
+      $("resultActions").hidden = false;
+    }
+
     renderBinder();
     const again = $("again");
-    again.focus();
-    again.onclick = showPack;
+    if (again) { again.onclick = () => window.CardGame.openNow(lastPack); again.focus({ preventScroll: true }); }
+    $("choose").onclick = showPack;
+    spaceAction = lastPack ? () => window.CardGame.openNow(lastPack) : showPack;
+  }
+
+  // =================== Booster box: open 10 packs at once ===================
+  function openBox(packDef, n = 10) {
+    if (!packDef) return;
+    lastPack = packDef;
+    const all = [], fresh = new Set();
+    for (let i = 0; i < n; i++) {
+      const { pulls, isNew } = rollPack(packDef);
+      pulls.forEach((c, j) => { all.push(c); if (isNew[j]) fresh.add(c.id); });
+    }
+    store(); renderBinder();
+    const counts = RARITY_KEYS.map((k) => [RARITIES[k], all.filter((c) => c.rarity === k).length]);
+    const hits = all.filter((c) => rank(c.rarity) >= 2).sort((a, b) => rank(b.rarity) - rank(a.rarity));
+    const top = hits[0] ? rarityOf(hits[0]) : null;
+    $("boxBody").innerHTML = `
+      <p class="box-sum"><b>${n} ${esc(packDef.name)} packs</b> · ${all.length} cards · ${fresh.size} new to your collection</p>
+      <div class="rar-row">${counts.map(([r, k]) => `<span class="rar-chip" style="--glow:${esc(r.glow || "#8e9ab0")}"><i></i>${esc(r.label)} <b>${k}</b></span>`).join("")}</div>
+      <h3>Hits <span class="muted">(${hits.length})</span></h3>
+      ${hits.length ? `<div class="hit-grid in-dlg">${hits.map((c) => hitHTML(c, fresh.has(c.id) ? "New!" : "")).join("")}</div>`
+        : `<p class="muted">No rare cards in this box. Unlucky!</p>`}
+      <div class="actions"><button class="btn" id="boxAgain">Open another box</button><button class="btn alt" data-close>Done</button></div>`;
+    const d = $("boxDlg");
+    if (!d.open) d.showModal();
+    d.querySelector(".dlg-body, #boxBody").scrollTop = 0;
+    $("boxAgain").onclick = () => openBox(packDef, n);
+    if (top) { sfx.charge(); setTimeout(() => celebrate(top), 300); }
+  }
+
+  // =================== Card hits & stats ===================
+  const hitHTML = (c, note = "") => {
+    const r = rarityOf(c);
+    return `<div class="hit${r.shine ? " shine" : ""}"><div class="hit-card">${cardHTML(c)}${badge(r)}</div>
+      ${note ? `<small>${esc(note)}</small>` : ""}</div>`;
+  };
+  function renderHits() {
+    const list = save.hits.map((h) => ({ h, c: byId(h.id) })).filter((x) => x.c);
+    $("hitCount").textContent = list.length ? `${list.length} hit${list.length === 1 ? "" : "s"}` : "";
+    $("hits").innerHTML = list.length ? list.slice(0, 30).map(({ h, c }) => hitHTML(c, "from " + h.pack)).join("")
+      : `<div class="hits-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l-1 4H7zM7 7h10v14H7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        <b>No card hits yet</b><span>Rare and better pulls will show up here as you open packs.</span></div>`;
+  }
+
+  function showStats() {
+    const CARDS = live(), total = RARITY_KEYS.reduce((t, k) => t + (save.counts[k] || 0), 0);
+    const found = CARDS.filter((c) => save.owned[c.id]).length;
+    $("statsBody").innerHTML = `
+      <div class="stat-grid">
+        <div><span>Packs opened</span><b>${save.packs}</b></div>
+        <div><span>Cards pulled</span><b>${total}</b></div>
+        <div><span>Found</span><b>${found} / ${CARDS.length}</b></div>
+        <div><span>Best pull</span><b>${save.best < 0 ? "—" : esc(RARITIES[RARITY_KEYS[save.best]].label)}</b></div>
+      </div>
+      <h3>Your pulls by rarity</h3>
+      <div class="rate-list">${RARITY_KEYS.map((k) => {
+        const n = save.counts[k] || 0, p = total ? n / total : 0, r = RARITIES[k];
+        return `<div class="rate"><span>${esc(r.symbol)} ${esc(r.label)}</span><span class="bar"><i style="width:${Math.max(p ? 2 : 0, p * 100)}%;background:${esc(r.glow || "#8e9ab0")}"></i></span>
+          <b>${n}</b><em>${total ? (p * 100 < 1 && p > 0 ? (p * 100).toFixed(1) : Math.round(p * 100)) + "%" : "—"}</em></div>`;
+      }).join("")}</div>
+      ${total ? "" : '<p class="muted">Open some packs to see your pull rates.</p>'}`;
+    $("statsDlg").showModal();
+  }
+
+  // =================== Header banner ===================
+  function renderHero() {
+    const imgs = live().map((c) => c.image).filter(Boolean);
+    $("heroCollage").innerHTML = imgs.length ? Array.from({ length: 14 }, (_, i) =>
+      `<div class="hc"><img src="${esc(imgs[i % imgs.length])}" alt="" onerror="this.remove()"></div>`).join("") : "";
   }
 
   // =================== Binder ===================
@@ -363,7 +499,9 @@
     const found = CARDS.filter((c) => save.owned[c.id]).length;
     $("sPacks").textContent = save.packs;
     $("sFound").textContent = found;
+    $("sFoundOf").textContent = " / " + CARDS.length;
     $("sTotal").textContent = CARDS.length;
+    $("binderSub").textContent = `${found} of ${CARDS.length} cards found · ${save.packs} pack${save.packs === 1 ? "" : "s"} opened`;
     $("sBest").textContent = save.best < 0 ? "—" : RARITIES[RARITY_KEYS[save.best]].label;
 
     const types = [...new Set(CARDS.map((c) => c.type))];
@@ -376,6 +514,8 @@
       return `<div class="mini${n ? "" : " missing"}${rarityOf(c).shine ? " shine" : ""}">
         ${n > 1 ? `<span class="count">×${n}</span>` : ""}${cardHTML(c, !n)}</div>`;
     }).join("") || "<p>No cards here yet.</p>";
+    renderHits();
+    renderHero();
   }
   $("filters").onclick = (e) => { const b = e.target.closest("[data-f]"); if (b) { filter = b.dataset.f; renderBinder(); } };
 
@@ -388,10 +528,34 @@
       setTimeout(() => { armed = false; b.textContent = "Reset collection"; }, 3000);
       return;
     }
-    save = { packs: 0, owned: {}, best: -1 };
+    save = { packs: 0, owned: {}, best: -1, hits: [], counts: {} };
     store(); armed = false; b.textContent = "Reset collection";
     renderBinder(); showPack();
   };
+
+  // =================== Controls: reveal style, stats, dialogs, Space key ===================
+  let revealMode = "stack";
+  try { revealMode = localStorage.getItem(SET.saveKey + "-reveal") === "grid" ? "grid" : "stack"; } catch (e) {}
+  const paintMode = () => document.querySelectorAll(".seg [data-mode]").forEach((b) => b.setAttribute("aria-checked", b.dataset.mode === revealMode));
+  document.querySelector(".seg").onclick = (e) => {
+    const b = e.target.closest("[data-mode]"); if (!b) return;
+    revealMode = b.dataset.mode; paintMode();
+    try { localStorage.setItem(SET.saveKey + "-reveal", revealMode); } catch (e2) {}
+  };
+  paintMode();
+  $("statsBtn").onclick = showStats;
+  document.querySelectorAll("dialog").forEach((d) => {
+    d.addEventListener("click", (e) => { if (e.target === d || e.target.closest("[data-close]")) d.close(); });
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.code !== "Space" || e.repeat) return;
+    if ($("playView").hidden || document.querySelector("dialog[open]")) return;
+    const t = e.target;
+    if (t.closest && t.closest("input, textarea, select, button, a, [contenteditable]")) return;
+    if (!spaceAction) return;
+    e.preventDefault();
+    spaceAction();
+  });
 
   // =================== Hooks used by builder.js ===================
   window.CardGame = {
@@ -416,6 +580,7 @@
     showPicker: showPack,
     // Open a pack straight away (used by "Open it now")
     openNow(pack) {
+      spaceAction = null;
       $("stage").innerHTML = `<div class="picker"><p class="hint" style="visibility:hidden">.</p><div class="packs">
         <div class="pick chosen"><button class="pack" ${packAttrs(pack)}>${packFace(pack)}</button></div></div></div>`;
       const el = $("stage").querySelector(".pack");
