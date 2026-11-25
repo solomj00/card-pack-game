@@ -102,3 +102,65 @@ header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; ju
 
 @media (max-width: 600px) { .slot { width: 150px; height: 210px; } .stage { min-height: 420px; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } .slot { opacity: 1; transform: none; } }
+
+/* =====================  Pack opening effects  ===================== */
+.stage { overflow-x: clip; }
+.icon-btn { min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 0; cursor: pointer;
+  background: var(--bg-dark); color: var(--text); font-weight: 700; }
+.icon-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+/* pack shake before tearing */
+.pack.shake { animation: wiggle .45s ease-in-out; }
+@keyframes wiggle { 0%,100% { transform: rotate(0); } 20% { transform: rotate(-6deg) scale(1.03); } 40% { transform: rotate(6deg) scale(1.05); }
+  60% { transform: rotate(-4deg) scale(1.05); } 80% { transform: rotate(3deg) scale(1.03); } }
+.pack.torn .tear { transform: translate(90px, -140px) rotate(35deg); opacity: 0; transition-duration: .6s; }
+.pack.gone { transform: translateY(160px) scale(.9); opacity: 0; transition: transform .45s ease-in, opacity .45s; }
+
+/* the table: stack in the middle, revealed cards below */
+.table { width: 100%; display: grid; justify-items: center; gap: 16px; }
+.call { min-height: 1.6em; font: 22px/1.2 var(--title-font); text-align: center; }
+.call.loud { font-size: clamp(26px, 5vw, 40px); color: var(--glow, #fff); text-shadow: 0 2px 0 rgba(0,0,0,.35), 0 0 18px var(--glow, transparent);
+  animation: pop .45s cubic-bezier(.3, 1.8, .5, 1); }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.pile { position: relative; width: 220px; height: 308px; border: 0; padding: 0; background: none; cursor: pointer; isolation: isolate; }
+.pile:focus-visible { outline: 4px solid #fff; outline-offset: 8px; border-radius: 12px; }
+.pile .pb { position: absolute; inset: 0; border-radius: 12px; box-shadow: 0 10px 20px var(--shadow);
+  transform: translate(calc(var(--i) * 3px), calc(var(--i) * -3px)); animation: rise .5s backwards; animation-delay: calc(var(--i) * 60ms); }
+@keyframes rise { from { transform: translateY(140px) scale(.9); opacity: 0; } }
+
+.big { position: absolute; inset: 0; perspective: 1100px; z-index: 5; animation: lift .3s ease-out; }
+@keyframes lift { from { transform: translateY(0) scale(.96); } to { transform: translateY(-6px) scale(1.02); } }
+.big .flip { transition: transform .55s cubic-bezier(.4, 1.4, .6, 1); }
+.big.open .flip { transform: rotateY(180deg); }
+.big.charge .back { box-shadow: 0 0 0 4px var(--glow), 0 0 40px 12px var(--glow); animation: pulse .32s ease-in-out infinite alternate; }
+@keyframes pulse { to { box-shadow: 0 0 0 6px var(--glow), 0 0 70px 26px var(--glow); } }
+.big.charge.h3 { animation: rumble .09s linear infinite; }
+@keyframes rumble { 0% { transform: translate(2px, -1px) rotate(.6deg); } 50% { transform: translate(-2px, 1px) rotate(-.6deg); } 100% { transform: translate(1px, 2px); } }
+.big.leave { animation: leave .28s ease-in forwards; }
+@keyframes leave { to { transform: translateY(240px) scale(.35); opacity: 0; } }
+
+.rays { position: absolute; left: 50%; top: 50%; width: 680px; height: 680px; margin: -340px 0 0 -340px; z-index: -1; pointer-events: none; border-radius: 50%;
+  background: repeating-conic-gradient(var(--glow) 0 7deg, transparent 7deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 18%, transparent 62%); mask: radial-gradient(circle, #000 18%, transparent 62%);
+  animation: rays-in .5s ease-out forwards, spin 9s linear infinite; opacity: 0; }
+@keyframes rays-in { to { opacity: .85; } }
+@keyframes spin { to { rotate: 360deg; } }
+
+.flash { position: fixed; inset: 0; z-index: 60; background: #fff; pointer-events: none; animation: flash .7s ease-out forwards; }
+@keyframes flash { from { opacity: .9; } to { opacity: 0; } }
+#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 70; }
+
+/* revealed cards line up underneath */
+.got { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-height: 113px; }
+.got .tiny { width: 81px; height: 113px; animation: pop .3s ease-out; }
+.got .tiny > div { width: 180px; height: 252px; transform: scale(.45); transform-origin: top left; }
+.got .tiny .card { box-shadow: 0 6px 12px var(--shadow); }
+
+/* summary */
+.slot.open { opacity: 1; transform: none; animation: none; }
+.slot.best { filter: drop-shadow(0 0 16px var(--glow, #fff)); }
+.newtag { color: var(--button); }
+
+@media (max-width: 600px) { .pile { width: 190px; height: 266px; } .rays { width: 520px; height: 520px; margin: -260px 0 0 -260px; } }
+@media (prefers-reduced-motion: reduce) { .rays { opacity: .5; } }

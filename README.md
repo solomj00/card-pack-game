@@ -31,6 +31,13 @@ Some tips:
 - **Pack size:** add or remove lines in `PACK`.
 - **Guaranteed hit:** set a slot's `min`, for example `{ min: "holo" }`.
 
+## Tune the pack opening
+Each rarity in `cards.js` has two extra settings:
+- `glow` is the colour the card pulses before it flips. Use `""` for no build-up.
+- `hype` sets how big the celebration is: `0` is quiet, `1` adds a chime, `2` adds light rays and confetti, and `3` adds a shake, a screen flash and a big confetti burst.
+
+Cards in a pack are always revealed rarest-last. The **Sound** button in the header turns the sound effects on or off.
+
 ## Start over
 Click **Reset collection**, or change `saveKey` in `cards.js`. Your progress is saved in your browser.
 
@@ -39,7 +46,6 @@ Click **Reset collection**, or change `saveKey` in `cards.js`. Your progress is 
 - Several sets, each with its own `CARDS` list
 - A "sell duplicates" button
 - A history of your best pulls
-- Sound effects when a rare is flipped
 
 ## Hosting (GitHub + Vercel)
 This repo is connected to Vercel. Every time you push to the `main` branch, your live site updates automatically, usually within a minute.

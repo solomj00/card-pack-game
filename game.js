@@ -6,6 +6,9 @@
   const $ = (id) => document.getElementById(id);
   const RARITY_KEYS = Object.keys(RARITIES);          // in order, lowest first
   const rank = (key) => RARITY_KEYS.indexOf(key);
+  const rarityOf = (card) => RARITIES[card.rarity] || RARITIES[RARITY_KEYS[0]];
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // Give every card an id (its position in the list)
   CARDS.forEach((card, i) => { card.id = i; });
@@ -24,10 +27,70 @@
   document.documentElement.style.setProperty("--pack", SET.packColor);
   document.documentElement.style.setProperty("--card-back", SET.cardBack);
 
-  // ---------- Drawing a card ----------
+  // =================== Sound (made in code, no files needed) ===================
+  let soundOn = true;
+  try { soundOn = localStorage.getItem(SET.saveKey + "-sound") !== "off"; } catch (e) {}
+  let ac = null;
+  const audio = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return ac; };
+  function tone(freq, start = 0, dur = 0.15, type = "triangle", vol = 0.15) {
+    const a = soundOn && audio(); if (!a) return;
+    const t = a.currentTime + start, o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(dur = 0.3, vol = 0.2) {
+    const a = soundOn && audio(); if (!a) return;
+    const buf = a.createBuffer(1, a.sampleRate * dur, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    f.type = "highpass"; f.frequency.value = 1800; g.gain.value = vol;
+    src.buffer = buf; src.connect(f).connect(g).connect(a.destination); src.start();
+  }
+  const sfx = {
+    shake: () => [0, .09, .18, .27].forEach((t) => tone(140, t, .08, "square", .05)),
+    tear:  () => noise(.35, .25),
+    flip:  () => { tone(520, 0, .07); tone(780, .04, .07); },
+    charge: () => { for (let i = 0; i < 6; i++) tone(300 + i * 70, i * .1, .1, "sine", .08); },
+    hype: (h) => {
+      const notes = [[], [659, 784], [523, 659, 784, 1047], [523, 659, 784, 1047, 1319, 1568]][h] || [];
+      notes.forEach((f, i) => tone(f, i * .08, .35, "triangle", .14));
+      if (h >= 3) [523, 659, 784].forEach((f) => tone(f, .5, 1.2, "sine", .07));
+    },
+  };
+  const paintSound = () => { const b = $("sound"); b.textContent = "Sound: " + (soundOn ? "on" : "off"); b.setAttribute("aria-pressed", soundOn); };
+  $("sound").onclick = () => { soundOn = !soundOn; try { localStorage.setItem(SET.saveKey + "-sound", soundOn ? "on" : "off"); } catch (e) {} paintSound(); };
+  paintSound();
+
+  // =================== Confetti ===================
+  const cv = $("confetti"), cx = cv.getContext("2d");
+  let bits = [], running = false;
+  function confetti(count, colors) {
+    if (calm) return;
+    cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
+    for (let i = 0; i < count; i++) bits.push({
+      x: innerWidth / 2 + (Math.random() - .5) * 120, y: innerHeight * .45,
+      vx: (Math.random() - .5) * 16, vy: -Math.random() * 16 - 6, r: Math.random() * 6.3, vr: (Math.random() - .5) * .4,
+      w: 6 + Math.random() * 6, h: 10 + Math.random() * 8, c: colors[i % colors.length], life: 0,
+    });
+    if (!running) { running = true; requestAnimationFrame(tick); }
+  }
+  function tick() {
+    const s = devicePixelRatio; cx.clearRect(0, 0, cv.width, cv.height);
+    bits = bits.filter((b) => b.y < innerHeight + 40 && b.life < 260);
+    for (const b of bits) {
+      b.life++; b.vy += .45; b.vx *= .985; b.x += b.vx; b.y += b.vy; b.r += b.vr;
+      cx.save(); cx.translate(b.x * s, b.y * s); cx.rotate(b.r); cx.scale(1, Math.cos(b.life * .2));
+      cx.fillStyle = b.c; cx.fillRect(-b.w * s / 2, -b.h * s / 2, b.w * s, b.h * s); cx.restore();
+    }
+    if (bits.length) requestAnimationFrame(tick); else { running = false; cx.clearRect(0, 0, cv.width, cv.height); }
+  }
+  function flash() { if (calm) return; const f = document.createElement("div"); f.className = "flash"; document.body.append(f); setTimeout(() => f.remove(), 800); }
+
+  // =================== Drawing a card ===================
   function cardHTML(card, hidden) {
     const [color, picBg] = TYPES[card.type] || ["#e6e0d8", "#f7f4ef"];
-    const r = RARITIES[card.rarity] || RARITIES[RARITY_KEYS[0]];
+    const r = rarityOf(card);
     const initials = card.name.split(" ").map((w) => w[0]).join("").replace(/[^A-Za-z0-9]/g, "").slice(0, 2);
     const pic = hidden ? "" :
       `<img src="${esc(card.image)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'${initials}'}))">`;
@@ -39,7 +102,7 @@
     </div>`;
   }
 
-  // ---------- Pulling a random card ----------
+  // =================== Pulling a random card ===================
   // Picks a rarity by weight (at least `min`), then a random card of that rarity.
   // If your set has no card of that rarity, it uses the closest rarity you do have.
   function pull(min) {
@@ -47,7 +110,6 @@
     let roll = Math.random() * options.reduce((t, k) => t + RARITIES[k].weight, 0);
     let pick = options[0];
     for (const k of options) { roll -= RARITIES[k].weight; if (roll <= 0) { pick = k; break; } }
-
     const target = rank(pick);
     const order = RARITY_KEYS.map((k, i) => i).sort((a, b) => Math.abs(a - target) - Math.abs(b - target) || a - b);
     for (const i of order) {
@@ -56,7 +118,7 @@
     }
   }
 
-  // ---------- Screens ----------
+  // =================== 1. The pack ===================
   function showPack() {
     const cover = CARDS.length ? CARDS[save.packs % CARDS.length] : null;
     $("stage").innerHTML = `<div>
@@ -70,61 +132,146 @@
     if (CARDS.length) $("pack").onclick = openPack;
   }
 
-  function openPack() {
+  async function openPack() {
     const pack = $("pack");
     pack.onclick = null;
-    pack.classList.add("torn");
-    const pulls = PACK.map((slot) => pull(slot.min));
-    setTimeout(() => { pack.classList.add("gone"); setTimeout(() => dealCards(pulls), 350); }, 550);
+    // Pull the cards and save them right away, so leaving mid-reveal never loses a pull.
+    // Cards are sorted so the rarest one is revealed last.
+    const pulls = PACK.map((slot) => pull(slot.min)).sort((a, b) => rank(a.rarity) - rank(b.rarity));
+    const seen = {};
+    const isNew = pulls.map((c) => { const n = !save.owned[c.id] && !seen[c.id]; seen[c.id] = 1; return n; });
+    save.packs++;
+    pulls.forEach((c) => { save.owned[c.id] = (save.owned[c.id] || 0) + 1; save.best = Math.max(save.best, rank(c.rarity)); });
+    store();
+
+    sfx.shake(); pack.classList.add("shake"); await wait(calm ? 0 : 450);
+    pack.classList.remove("shake"); sfx.tear(); pack.classList.add("torn"); await wait(calm ? 0 : 550);
+    pack.classList.add("gone"); await wait(calm ? 0 : 400);
+    showStack(pulls, isNew);
   }
 
-  function dealCards(pulls) {
+  // =================== 2. Reveal one card at a time ===================
+  function showStack(pulls, isNew) {
+    $("stage").innerHTML = `<div class="table">
+      <div class="call" id="call" aria-live="polite">Tap the stack to reveal</div>
+      <button class="pile" id="pile" aria-label="Reveal the next card">
+        ${pulls.map((c, i) => `<div class="pb back" style="--i:${pulls.length - 1 - i}"></div>`).join("")}
+      </button>
+      <div class="got" id="got"></div>
+      <div class="actions" style="margin-top:4px"><button class="btn alt" id="skip">Reveal all</button></div>
+    </div>`;
+
+    let next = 0, current = null, busy = false, skipping = false;
+    const pile = $("pile"), call = $("call");
+
+    async function reveal() {
+      const card = pulls[next], r = rarityOf(card), h = r.hype || 0, fresh = isNew[next];
+      // take the top card off the pile
+      const backs = pile.querySelectorAll(".pb");
+      backs[backs.length - 1]?.remove();
+      next++;
+      const big = document.createElement("div");
+      big.className = "big" + (r.shine ? " shine" : "");
+      big.style.setProperty("--glow", r.glow || "#fff");
+      big.innerHTML = `<div class="flip"><div class="face back"></div><div class="face front">${cardHTML(card)}</div></div>`;
+      big.onpointermove = (e) => {
+        const b = big.getBoundingClientRect();
+        big.style.setProperty("--hx", ((e.clientX - b.left) / b.width) * 100 + "%");
+        big.style.setProperty("--hy", ((e.clientY - b.top) / b.height) * 100 + "%");
+      };
+      pile.append(big);
+      current = { big, card };
+      call.className = "call"; call.style.removeProperty("--glow");
+
+      // build-up before a rare card flips
+      if (h > 0 && r.glow && !skipping) {
+        call.textContent = h >= 3 ? "Something huge…" : h >= 2 ? "It's shimmering…" : "Ooh…";
+        big.classList.add("charge", "h" + h);
+        sfx.charge();
+        await wait(calm ? 0 : 500 + h * 300);
+        big.classList.remove("charge", "h" + h);
+      }
+
+      sfx.flip();
+      big.classList.add("open");
+      await wait(skipping ? 120 : 350);
+
+      // celebrate
+      if (h > 0 && !skipping) {
+        call.className = "call loud"; call.style.setProperty("--glow", r.glow || "#fff");
+        call.textContent = r.label.toUpperCase() + "!" + (fresh ? " New!" : "");
+        sfx.hype(h);
+        if (h >= 2) { const rays = document.createElement("div"); rays.className = "rays"; rays.style.setProperty("--glow", r.glow || "#fff"); pile.append(rays); }
+        if (h >= 2) confetti(h >= 3 ? 220 : 90, [r.glow || "#fff", "#ffffff", "#ffc929", "#7af6ff"]);
+        if (h >= 3) flash();
+      } else {
+        call.textContent = r.label + (fresh ? " · New!" : "");
+      }
+      if (next === pulls.length && !skipping) call.textContent += "  (tap to finish)";
+    }
+
+    function tuck() {
+      // move the shown card down into the row underneath
+      if (!current) return;
+      const { big, card } = current;
+      pile.querySelector(".rays")?.remove();
+      big.classList.add("leave");
+      setTimeout(() => big.remove(), 280);
+      const tiny = document.createElement("div");
+      tiny.className = "tiny" + (rarityOf(card).shine ? " shine" : "");
+      tiny.innerHTML = `<div>${cardHTML(card)}</div>`;
+      $("got").append(tiny);
+      current = null;
+    }
+
+    async function step() {
+      if (busy) return;
+      busy = true;
+      tuck();
+      if (next < pulls.length) { await reveal(); busy = false; }
+      else { await wait(250); showSummary(pulls, isNew); }
+    }
+
+    pile.onclick = step;
+    $("skip").onclick = async () => {
+      if (skipping) return;
+      skipping = true;
+      $("skip").disabled = true;
+      while (busy) await wait(50);
+      busy = true;
+      while (next < pulls.length) { tuck(); await reveal(); await wait(120); }
+      tuck(); await wait(250);
+      showSummary(pulls, isNew);
+    };
+  }
+
+  // =================== 3. Summary ===================
+  function showSummary(pulls, isNew) {
+    const bestRank = Math.max(...pulls.map((c) => rank(c.rarity)));
     $("stage").innerHTML = `<div>
       <div class="spread">${pulls.map((c, i) => {
-        const r = RARITIES[c.rarity];
+        const r = rarityOf(c), best = rank(c.rarity) === bestRank && (r.hype || 0) > 0;
         return `<div>
-          <button class="slot${r.shine ? " shine" : ""}" style="animation-delay:${i * 0.12}s" aria-label="Flip card ${i + 1}">
+          <div class="slot open${r.shine ? " shine" : ""}${best ? " best" : ""}" style="--glow:${r.glow || "#fff"}">
             <div class="flip"><div class="face back"></div><div class="face front">${cardHTML(c)}</div></div>
-          </button>
-          <div class="tag">${r.label}${save.owned[c.id] ? "" : " · New!"}</div></div>`;
+          </div>
+          <div class="tag" style="opacity:1">${r.label}${isNew[i] ? ' · <span class="newtag">New!</span>' : ""}</div></div>`;
       }).join("")}</div>
-      <div class="actions"><button class="btn alt" id="flipAll">Flip all</button><button class="btn" id="again" hidden>Open another pack</button></div></div>`;
-
-    const slots = [...document.querySelectorAll(".slot")];
-    let left = slots.length;
-    const flip = (slot) => {
-      if (slot.classList.contains("open")) return;
-      slot.classList.add("open");
-      slot.nextElementSibling.style.opacity = 1;
-      if (--left === 0) finishPack(pulls);
-    };
-    slots.forEach((slot) => {
-      slot.onclick = () => flip(slot);
-      slot.onpointermove = (e) => {           // moves the foil shine with the mouse
+      <div class="actions"><button class="btn" id="again">Open another pack</button></div></div>`;
+    document.querySelectorAll(".slot").forEach((slot) => {
+      slot.onpointermove = (e) => {
         const b = slot.getBoundingClientRect();
         slot.style.setProperty("--hx", ((e.clientX - b.left) / b.width) * 100 + "%");
         slot.style.setProperty("--hy", ((e.clientY - b.top) / b.height) * 100 + "%");
       };
     });
-    $("flipAll").onclick = () => slots.forEach((s, i) => setTimeout(() => flip(s), i * 150));
-  }
-
-  function finishPack(pulls) {
-    save.packs++;
-    pulls.forEach((c) => {
-      save.owned[c.id] = (save.owned[c.id] || 0) + 1;
-      save.best = Math.max(save.best, rank(c.rarity));
-    });
-    store();
     renderBinder();
-    $("flipAll").hidden = true;
     const again = $("again");
-    again.hidden = false;
     again.focus();
     again.onclick = showPack;
   }
 
-  // ---------- Binder ----------
+  // =================== Binder ===================
   let filter = "All";
   function renderBinder() {
     const found = CARDS.filter((c) => save.owned[c.id]).length;
@@ -140,7 +287,7 @@
     const list = CARDS.filter((c) => filter === "All" || (filter === "Owned" ? save.owned[c.id] : c.type === filter));
     $("grid").innerHTML = list.map((c) => {
       const n = save.owned[c.id] || 0;
-      return `<div class="mini${n ? "" : " missing"}${RARITIES[c.rarity]?.shine ? " shine" : ""}">
+      return `<div class="mini${n ? "" : " missing"}${rarityOf(c).shine ? " shine" : ""}">
         ${n > 1 ? `<span class="count">×${n}</span>` : ""}${cardHTML(c, !n)}</div>`;
     }).join("") || "<p>No cards here yet.</p>";
   }

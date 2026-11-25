@@ -15,12 +15,14 @@ const SET = {
 // ---- 2. Rarities -----------------------------------------------------
 // weight = how often it shows up. Bigger number = more common.
 // shine: true gives the card a rainbow foil effect.
+// glow:  colour the card glows before it flips ("" = no build-up).
+// hype:  0 = quiet, 1 = glow + chime, 2 = light rays + confetti, 3 = the works (shake, flash, big confetti)
 const RARITIES = {
-  common:   { label: "Common",     weight: 60, symbol: "●",  shine: false },
-  uncommon: { label: "Uncommon",   weight: 25, symbol: "◆",  shine: false },
-  rare:     { label: "Rare",       weight: 10, symbol: "★",  shine: false },
-  holo:     { label: "Holo Rare",  weight: 4,  symbol: "★H", shine: true  },
-  ultra:    { label: "Ultra Rare", weight: 1,  symbol: "✦",  shine: true  },
+  common:   { label: "Common",     weight: 60, symbol: "●",  shine: false, glow: "",        hype: 0 },
+  uncommon: { label: "Uncommon",   weight: 25, symbol: "◆",  shine: false, glow: "",        hype: 0 },
+  rare:     { label: "Rare",       weight: 10, symbol: "★",  shine: false, glow: "#7ad3ff", hype: 1 },
+  holo:     { label: "Holo Rare",  weight: 4,  symbol: "★H", shine: true,  glow: "#ff6ad5", hype: 2 },
+  ultra:    { label: "Ultra Rare", weight: 1,  symbol: "✦",  shine: true,  glow: "#ffd84a", hype: 3 },
 };
 
 // ---- 3. What's in one pack ------------------------------------------
