@@ -10,6 +10,14 @@
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  // Older cards.js files had one PACK instead of a PACKS list: still support that.
+  const PACK_LIST = (typeof PACKS !== "undefined" && PACKS.length) ? PACKS : [{
+    name: (typeof SET !== "undefined" && SET.packName) || "BOOSTER",
+    color: (typeof SET !== "undefined" && SET.packColor) || "#ffc929",
+    about: "",
+    slots: (typeof PACK !== "undefined" && PACK.length) ? PACK : [{ min: RARITY_KEYS[0] }, { min: RARITY_KEYS[0] }, { min: RARITY_KEYS[0] }],
+  }];
+
   // Give every card an id (its position in the list)
   CARDS.forEach((card, i) => { card.id = i; });
 
@@ -139,8 +147,8 @@
   function showPack() {
     if (!CARDS.length) { $("stage").innerHTML = `<p class="hint">Add cards in cards.js to start</p>`; return; }
     $("stage").innerHTML = `<div class="picker">
-      <p class="hint">${PACKS.length > 1 ? "Choose a pack" : "Tap the pack to open it"}</p>
-      <div class="packs">${PACKS.map(packHTML).join("")}</div></div>`;
+      <p class="hint">${PACK_LIST.length > 1 ? "Choose a pack" : "Tap the pack to open it"}</p>
+      <div class="packs">${PACK_LIST.map(packHTML).join("")}</div></div>`;
     document.querySelectorAll(".pack").forEach((el) => { el.onclick = () => choose(el); });
   }
 
@@ -153,7 +161,7 @@
     await wait(calm || picks.length < 2 ? 0 : 320);
     picks.forEach((p) => p !== mine && (p.style.display = "none"));
     mine.classList.add("chosen");
-    openPack(PACKS[+el.dataset.pack], el);
+    openPack(PACK_LIST[+el.dataset.pack], el);
   }
 
   async function openPack(packDef, pack) {
