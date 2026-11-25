@@ -6,8 +6,6 @@
 // ---- 1. Your set -----------------------------------------------------
 const SET = {
   name: "My Card Set",        // shown at the top of the page
-  packName: "BOOSTER",        // printed on the pack
-  packColor: "#ffc929",       // pack wrapper colour
   cardBack: "#1b1214",        // colour of the back of every card
   saveKey: "myCardSet-v1",    // change this to start a fresh save
 };
@@ -25,15 +23,30 @@ const RARITIES = {
   ultra:    { label: "Ultra Rare", weight: 1,  symbol: "✦",  shine: true,  glow: "#ffd84a", hype: 3 },
 };
 
-// ---- 3. What's in one pack ------------------------------------------
-// Each line is one card slot. "min" is the lowest rarity that slot can be.
-// Add or remove lines to change the pack size.
-const PACK = [
-  { min: "common" },
-  { min: "common" },
-  { min: "common" },
-  { min: "uncommon" },
-  { min: "rare" },       // guaranteed rare or better
+// ---- 3. Packs to choose from ----------------------------------------
+// Each pack shows up on the pack-picker screen.
+//   name:  printed on the pack
+//   color: wrapper colour
+//   about: short line shown under the pack
+//   types: (optional) only cards of these types can come out of this pack
+//   cover: (optional) picture on the pack, e.g. "images/cover.png"
+//          If you leave it out, one of the pack's cards is shown.
+//   slots: one entry per card. "min" is the lowest rarity that slot can be.
+// Add, remove or reorder packs freely.
+const PACKS = [
+  {
+    name: "BOOSTER", color: "#ffc929", about: "5 cards · 1 rare or better",
+    slots: [{ min: "common" }, { min: "common" }, { min: "common" }, { min: "uncommon" }, { min: "rare" }],
+  },
+  {
+    name: "ELEMENTS", color: "#ff8a5b", about: "Fire, Water & Grass only",
+    types: ["Fire", "Water", "Grass"],
+    slots: [{ min: "common" }, { min: "common" }, { min: "uncommon" }, { min: "uncommon" }, { min: "rare" }],
+  },
+  {
+    name: "PREMIUM", color: "#b79cf0", about: "3 cards · 1 holo or better",
+    slots: [{ min: "uncommon" }, { min: "rare" }, { min: "holo" }],
+  },
 ];
 
 // ---- 4. Types (card colours) ----------------------------------------

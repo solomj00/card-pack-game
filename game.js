@@ -24,7 +24,6 @@
   // ---------- Apply set settings ----------
   document.title = SET.name;
   $("setName").textContent = SET.name;
-  document.documentElement.style.setProperty("--pack", SET.packColor);
   document.documentElement.style.setProperty("--card-back", SET.cardBack);
 
   // =================== Sound (made in code, no files needed) ===================
@@ -103,9 +102,14 @@
   }
 
   // =================== Pulling a random card ===================
-  // Picks a rarity by weight (at least `min`), then a random card of that rarity.
-  // If your set has no card of that rarity, it uses the closest rarity you do have.
-  function pull(min) {
+  // Picks a rarity by weight (at least `min`), then a random card of that rarity
+  // from the pack's pool. If the pool has no card of that rarity, it uses the
+  // closest rarity it does have.
+  const poolFor = (pack) => {
+    const p = pack.types ? CARDS.filter((c) => pack.types.includes(c.type)) : CARDS;
+    return p.length ? p : CARDS;
+  };
+  function pull(min, pool) {
     const options = RARITY_KEYS.slice(Math.max(0, rank(min)));
     let roll = Math.random() * options.reduce((t, k) => t + RARITIES[k].weight, 0);
     let pick = options[0];
@@ -113,37 +117,57 @@
     const target = rank(pick);
     const order = RARITY_KEYS.map((k, i) => i).sort((a, b) => Math.abs(a - target) - Math.abs(b - target) || a - b);
     for (const i of order) {
-      const pool = CARDS.filter((c) => rank(c.rarity) === i);
-      if (pool.length) return pool[Math.floor(Math.random() * pool.length)];
+      const options2 = pool.filter((c) => rank(c.rarity) === i);
+      if (options2.length) return options2[Math.floor(Math.random() * options2.length)];
     }
   }
 
-  // =================== 1. The pack ===================
-  function showPack() {
-    const cover = CARDS.length ? CARDS[save.packs % CARDS.length] : null;
-    $("stage").innerHTML = `<div>
-      <button class="pack" id="pack" aria-label="Open a pack">
+  // =================== 1. Pick a pack ===================
+  function packHTML(pack, i) {
+    const pool = poolFor(pack);
+    const coverImg = pack.cover || (pool.length ? pool[(save.packs + i) % pool.length].image : "");
+    return `<div class="pick">
+      <button class="pack" data-pack="${i}" style="--pack:${esc(pack.color || "#ffc929")}" aria-label="Open a ${esc(pack.name)} pack">
         <div class="tear"></div>
-        <div class="cover">${cover ? `<img src="${esc(cover.image)}" alt="" onerror="this.remove()">` : ""}</div>
-        <div class="label">${esc(SET.packName)}</div>
-        <div class="sub">${PACK.length} cards</div>
+        <div class="cover">${coverImg ? `<img src="${esc(coverImg)}" alt="" onerror="this.remove()">` : ""}</div>
+        <div class="label">${esc(pack.name)}</div>
+        <div class="sub">${pack.slots.length} cards</div>
       </button>
-      <p class="hint">${CARDS.length ? "Tap the pack to open it" : "Add cards in cards.js to start"}</p></div>`;
-    if (CARDS.length) $("pack").onclick = openPack;
+      <p class="about">${esc(pack.about || "")}</p></div>`;
   }
 
-  async function openPack() {
-    const pack = $("pack");
-    pack.onclick = null;
+  function showPack() {
+    if (!CARDS.length) { $("stage").innerHTML = `<p class="hint">Add cards in cards.js to start</p>`; return; }
+    $("stage").innerHTML = `<div class="picker">
+      <p class="hint">${PACKS.length > 1 ? "Choose a pack" : "Tap the pack to open it"}</p>
+      <div class="packs">${PACKS.map(packHTML).join("")}</div></div>`;
+    document.querySelectorAll(".pack").forEach((el) => { el.onclick = () => choose(el); });
+  }
+
+  async function choose(el) {
+    const picks = [...document.querySelectorAll(".pick")];
+    document.querySelectorAll(".pack").forEach((p) => (p.onclick = null));
+    const mine = el.closest(".pick");
+    picks.forEach((p) => p !== mine && p.classList.add("fade"));
+    $("stage").querySelector(".hint").style.visibility = "hidden";
+    await wait(calm || picks.length < 2 ? 0 : 320);
+    picks.forEach((p) => p !== mine && (p.style.display = "none"));
+    mine.classList.add("chosen");
+    openPack(PACKS[+el.dataset.pack], el);
+  }
+
+  async function openPack(packDef, pack) {
     // Pull the cards and save them right away, so leaving mid-reveal never loses a pull.
     // Cards are sorted so the rarest one is revealed last.
-    const pulls = PACK.map((slot) => pull(slot.min)).sort((a, b) => rank(a.rarity) - rank(b.rarity));
+    const pool = poolFor(packDef);
+    const pulls = packDef.slots.map((slot) => pull(slot.min, pool)).sort((a, b) => rank(a.rarity) - rank(b.rarity));
     const seen = {};
     const isNew = pulls.map((c) => { const n = !save.owned[c.id] && !seen[c.id]; seen[c.id] = 1; return n; });
     save.packs++;
     pulls.forEach((c) => { save.owned[c.id] = (save.owned[c.id] || 0) + 1; save.best = Math.max(save.best, rank(c.rarity)); });
     store();
 
+    await wait(calm ? 0 : 150);
     sfx.shake(); pack.classList.add("shake"); await wait(calm ? 0 : 450);
     pack.classList.remove("shake"); sfx.tear(); pack.classList.add("torn"); await wait(calm ? 0 : 550);
     pack.classList.add("gone"); await wait(calm ? 0 : 400);
@@ -257,7 +281,7 @@
           </div>
           <div class="tag" style="opacity:1">${r.label}${isNew[i] ? ' · <span class="newtag">New!</span>' : ""}</div></div>`;
       }).join("")}</div>
-      <div class="actions"><button class="btn" id="again">Open another pack</button></div></div>`;
+      <div class="actions"><button class="btn" id="again">Choose another pack</button></div></div>`;
     document.querySelectorAll(".slot").forEach((slot) => {
       slot.onpointermove = (e) => {
         const b = slot.getBoundingClientRect();

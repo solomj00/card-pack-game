@@ -164,3 +164,29 @@ header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; ju
 
 @media (max-width: 600px) { .pile { width: 190px; height: 266px; } .rays { width: 520px; height: 520px; margin: -260px 0 0 -260px; } }
 @media (prefers-reduced-motion: reduce) { .rays { opacity: .5; } }
+
+/* =====================  Pack picker  ===================== */
+.picker { width: 100%; }
+.picker .hint { margin: 0 0 22px; font: 22px var(--title-font); }
+.packs { display: flex; flex-wrap: wrap; justify-content: center; gap: 28px 32px; }
+.pick { display: grid; justify-items: center; transition: opacity .3s, transform .3s; }
+.pick .about { margin: 12px 0 0; max-width: 220px; text-align: center; font-weight: 700; font-size: 14px; }
+.pick.fade { opacity: 0; transform: scale(.85); }
+.pick.chosen .about { visibility: hidden; }
+.packs .pack { width: 200px; height: 287px; }
+.packs .pack .cover { left: 20px; right: 20px; top: 62px; height: 130px; }
+.packs .pack .sub { bottom: 26px; }
+.packs .pack .label { bottom: 48px; font-size: clamp(18px, 2.4vw, 24px); padding: 0 8px; overflow-wrap: anywhere; }
+.pick:nth-child(2) .pack { animation-delay: -1s; } .pick:nth-child(3) .pack { animation-delay: -2s; }
+.pick .pack { animation: bob 3s ease-in-out infinite; }
+.pick.chosen .pack { animation: none; }
+.pick .pack.shake { animation: wiggle .45s ease-in-out; }
+@keyframes bob { 50% { transform: translateY(-8px) rotate(-1deg); } }
+@media (max-width: 600px) {
+  .packs { gap: 18px 14px; }
+  .packs .pack { width: 150px; height: 215px; }
+  .packs .pack .cover { left: 14px; right: 14px; top: 46px; height: 96px; }
+  .packs .pack .label { bottom: 40px; font-size: 18px; }
+  .packs .pack .sub { bottom: 20px; font-size: 13px; }
+  .pick .about { max-width: 150px; font-size: 13px; }
+}

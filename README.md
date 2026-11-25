@@ -26,10 +26,14 @@ Some tips:
 - If a picture doesn't show, check that the file name matches exactly, including capital letters and `.png` vs `.jpg`.
 - A card with a missing picture shows its initials, so you can test before you have the art.
 
-## Change the odds or the pack
+## Change the odds or the packs
 - **Odds:** change `weight` in `RARITIES`. Bigger numbers come up more often.
-- **Pack size:** add or remove lines in `PACK`.
-- **Guaranteed hit:** set a slot's `min`, for example `{ min: "holo" }`.
+- **Packs:** each entry in `PACKS` appears on the pack-picker screen. Copy one to make a new pack.
+  - `slots`: one line per card. Add or remove lines to change the pack size.
+  - `min`: the lowest rarity a slot can be. For example, `{ min: "holo" }` is a guaranteed holo or better.
+  - `types`: limits a pack to certain types, for example `types: ["Fire", "Water"]`. Leave it out to allow every card.
+  - `cover`: a picture for the pack wrapper. Leave it out to show one of the pack's cards.
+  - If a pack has no card at the rarity it rolls, it uses the closest rarity it does have.
 
 ## Tune the pack opening
 Each rarity in `cards.js` has two extra settings:
