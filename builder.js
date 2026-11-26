@@ -17,11 +17,12 @@
   const FINISHES = [["matte", "Matte"], ["glossy", "Glossy"], ["holo", "Holo foil"]];
   const COVERS = [["auto", "Surprise"], ["card", "Pick a card"], ["upload", "Upload"], ["none", "No art"]];
   const LUCK = [[1, "Normal"], [2, "Lucky ×2"], [4, "Super lucky ×4"]];
+  const ART_SIZES = [["window", "In a window"], ["whole", "Covers the whole pack"]];
   const POOLS = [["all", "Every card"], ["types", "By type"], ["pick", "Pick cards"]];
 
   const fresh = () => ({
     id: null, name: "MY PACK", color: "#ff4f6d", color2: "#ffc929", pattern: "stripes", finish: "glossy",
-    coverMode: "auto", coverCard: null, coverImg: "", count: 5,
+    coverMode: "auto", coverCard: null, coverImg: "", artSize: "window", showName: true, count: 5,
     guarantee: RARITY_KEYS[1] || "", luck: 1, types: [], poolMode: "all", cards: [],
   });
   let pickQ = "", pickR = "";
@@ -44,6 +45,7 @@
       coverMode: st.coverMode,
       coverCard: st.coverMode === "card" ? st.coverCard : null,
       coverImg: st.coverMode === "upload" ? st.coverImg : "",
+      artSize: st.coverMode === "none" ? "window" : st.artSize, showName: st.showName,
       types: st.poolMode === "types" && st.types.length ? st.types.slice() : undefined,
       cards: picked.length ? picked.map(String) : undefined,
       luck: st.luck, slots, about: bits.join(" · "),
@@ -52,7 +54,7 @@
   const fromPack = (p) => ({
     id: p.id, name: p.name, color: p.color, color2: p.color2 || p.color, pattern: p.pattern || "crimp",
     finish: p.finish || "matte", coverMode: p.coverMode || (p.coverImg ? "upload" : p.coverCard != null ? "card" : "auto"),
-    coverCard: p.coverCard ?? null, coverImg: p.coverImg || "", count: p.slots.length,
+    coverCard: p.coverCard ?? null, coverImg: p.coverImg || "", artSize: p.artSize || "window", showName: p.showName !== false, count: p.slots.length,
     guarantee: (p.slots.find((x) => G.rank(x.min) >= 1) || {}).min || "", luck: p.luck || 1, types: p.types || [],
     poolMode: p.cards && p.cards.length ? "pick" : p.types && p.types.length ? "types" : "all", cards: (p.cards || []).map(String),
   });
@@ -109,6 +111,9 @@
     $("wsThumbs").innerHTML = CARDS.map((c) =>
       `<button type="button" class="thumb" data-card="${c.id}" aria-pressed="${String(s.coverCard) === String(c.id)}" aria-label="${esc(c.name)}"><img src="${esc(c.image)}" alt="" onerror="this.remove()"><span>${esc(c.name)}</span></button>`).join("");
     $("wsUploadL").hidden = s.coverMode !== "upload";
+    $("wsArtSizeF").hidden = s.coverMode === "none";
+    $("wsArtSize").innerHTML = ART_SIZES.map(([v, l]) => chip("artSize", v, l, s.artSize === v)).join("");
+    $("wsShowName").checked = s.showName;
     $("wsCount").value = s.count; $("wsCountOut").textContent = s.count;
     $("wsGuar").innerHTML = `<option value="">No guarantee</option>` + RARITY_KEYS.slice(1).map((k) =>
       `<option value="${k}"${s.guarantee === k ? " selected" : ""}>${esc(RARITIES[k].label)} or better</option>`).join("");
@@ -181,6 +186,7 @@
   $("wsC1").addEventListener("input", (e) => { s.color = e.target.value; paintPreview(); });
   $("wsC2").addEventListener("input", (e) => { s.color2 = e.target.value; paintPreview(); });
   $("wsCount").addEventListener("input", (e) => { s.count = +e.target.value; $("wsCountOut").textContent = s.count; paintPreview(); });
+  $("wsShowName").addEventListener("change", (e) => { s.showName = e.target.checked; paintPreview(); });
   $("wsGuar").addEventListener("change", (e) => { s.guarantee = e.target.value; paintPreview(); });
 
   // Upload: shrink the picture so lots of packs fit in browser storage
@@ -189,11 +195,17 @@
     if (!file || !file.type.startsWith("image/")) { say("That file isn't a picture."); return; }
     const url = URL.createObjectURL(file), im = new Image();
     im.onload = () => {
-      const W = 360, H = 280, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
-      const k = Math.max(W / im.width, H / im.height), cx = cv.getContext("2d");
-      cx.drawImage(im, (W - im.width * k) / 2, (H - im.height * k) / 2, im.width * k, im.height * k);
+      // keep the picture's shape, longest side 640px
+      const k = Math.min(1, 640 / Math.max(im.width, im.height));
+      const W = Math.round(im.width * k), H = Math.round(im.height * k), cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+      cv.getContext("2d").drawImage(im, 0, 0, W, H);
       s.coverImg = cv.toDataURL("image/jpeg", 0.85); URL.revokeObjectURL(url);
-      $("wsUploadT").textContent = file.name; say(""); paintPreview();
+      $("wsUploadT").textContent = file.name;
+      if (im.height / im.width > 1.15) {          // tall: probably a full pack design
+        s.artSize = "whole"; s.showName = false;
+        say("Looks like a full pack design, so it covers the whole pack and the printed name is hidden. You can change either below.");
+      } else say("");
+      paintControls();
     };
     im.onerror = () => say("Couldn't read that picture.");
     im.src = url;

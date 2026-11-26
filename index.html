@@ -6,7 +6,7 @@
   <title>Card Opening Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 <canvas id="confetti" aria-hidden="true"></canvas>
@@ -137,6 +137,11 @@
               <div class="thumbs" id="wsThumbs"></div>
               <label class="upload" id="wsUploadL" hidden><input type="file" id="wsUpload" accept="image/*"><span id="wsUploadT">Choose a picture</span></label>
             </div>
+            <div class="field" id="wsArtSizeF">Art size<div class="chips" id="wsArtSize" role="radiogroup"></div>
+              <small id="wsArtNote">Tall pictures work best for the whole pack.</small></div>
+            <div class="field">
+              <label class="switch ws-switch"><input type="checkbox" id="wsShowName" checked><span>Print the pack name on the wrapper</span></label>
+            </div>
           </fieldset>
 
           <fieldset><legend>Inside the pack</legend>
@@ -198,9 +203,9 @@
 </dialog>
 
 <!-- Load order matters: your cards first, then the game -->
-<script src="cards.js?v=10"></script>
-<script src="game.js?v=10"></script>
-<script src="builder.js?v=10"></script>
-<script src="maker.js?v=10"></script>
+<script src="cards.js?v=11"></script>
+<script src="game.js?v=11"></script>
+<script src="builder.js?v=11"></script>
+<script src="maker.js?v=11"></script>
 </body>
 </html>

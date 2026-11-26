@@ -621,3 +621,13 @@ dialog.dlg::backdrop { background: rgba(5, 8, 15, .72); backdrop-filter: blur(3p
 .pk-check { position: absolute; top: -6px; right: -6px; z-index: 4; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; display: none; place-items: center; font: 800 13px var(--body-font); }
 .pk[aria-pressed="true"] .pk-check { display: grid; }
 .ws-panel .row .link { min-height: 40px; }
+
+/* =====================  Whole-pack art  ===================== */
+.pack[data-art="whole"] .cover { left: 0; right: 0; top: 0; bottom: 0; height: auto; border-radius: inherit; box-shadow: none; background: none; z-index: 0; }
+.pack[data-art="whole"]:has(.label) .cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55)); pointer-events: none; }
+.pack[data-art="whole"] .pat, .pack[data-art="whole"]::before, .pack[data-art="whole"]::after { display: none; }
+.pack[data-art="whole"] .tear { border-bottom-color: rgba(255,255,255,.35); z-index: 1; }
+.pack[data-art="whole"] .label, .pack[data-art="whole"] .sub { color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+.pack .label + .sub { z-index: 1; }
+.about .pack-name { color: #fff; font: 700 15px var(--title-font); }
+.ws-switch { min-height: 40px; font-weight: 600; }

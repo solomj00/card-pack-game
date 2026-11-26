@@ -222,17 +222,17 @@
     const c1 = pack.color || "#ffc929", c2 = pack.color2 || c1, img = coverOf(pack, i);
     return `<div class="tear"></div><div class="pat" aria-hidden="true"></div>
       <div class="cover${img ? "" : " empty"}">${img ? `<img src="${esc(img)}" alt="" onerror="this.remove()">` : ""}</div>
-      <div class="label">${esc(pack.name)}</div>
-      <div class="sub">${pack.slots.length} card${pack.slots.length === 1 ? "" : "s"}</div>
+      ${pack.showName === false ? "" : `<div class="label">${esc(pack.name)}</div>
+      <div class="sub">${pack.slots.length} card${pack.slots.length === 1 ? "" : "s"}</div>`}
       <div class="gloss" aria-hidden="true"></div>`;
   }
   const packAttrs = (pack) =>
-    `style="--pack:${esc(pack.color || "#ffc929")};--pack2:${esc(pack.color2 || pack.color || "#ffc929")};--pack-ink:${inkFor(pack.color2 || pack.color)}" data-pattern="${esc(pack.pattern || "crimp")}" data-finish="${esc(pack.finish || "matte")}"`;
+    `style="--pack:${esc(pack.color || "#ffc929")};--pack2:${esc(pack.color2 || pack.color || "#ffc929")};--pack-ink:${inkFor(pack.color2 || pack.color)}" data-pattern="${esc(pack.pattern || "crimp")}" data-finish="${esc(pack.finish || "matte")}" data-art="${pack.artSize === "whole" && coverOf(pack) ? "whole" : "window"}"`;
 
   function packHTML(pack, i) {
     return `<div class="pick">
       <button class="pack" data-pack="${i}" ${packAttrs(pack)} aria-label="Open a ${esc(pack.name)} pack">${packFace(pack, i)}</button>
-      <p class="about">${pack.mine ? '<span class="yours">Yours</span> ' : ""}${esc(pack.about || "")}</p>
+      <p class="about">${pack.showName === false ? `<b class="pack-name">${esc(pack.name)}</b><br>` : ""}${pack.mine ? '<span class="yours">Yours</span> ' : ""}${esc(pack.about || "")}</p>
       <button type="button" class="mini-btn" data-box="${i}">Open a box of 10</button></div>`;
   }
 

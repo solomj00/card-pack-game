@@ -70,6 +70,9 @@ Pictures are shrunk before saving, so a browser can hold well over 100 cards. Ca
 Players make their own packs on the **Build a pack** tab. They can choose:
 - **Wrapper:** the name, two colours, a pattern (stripes, dots, zigzag, burst or waves) and a finish (matte, glossy or holo foil).
 - **Cover art:** a surprise card, a card of their choice, an uploaded picture, or no art.
+- **Art size:** **In a window** shows the picture in a box on the wrapper. **Covers the whole pack** makes it the entire wrapper.
+- **Print the pack name on the wrapper:** turn this off when the picture already has its own design and title. The name then appears under the pack instead.
+- Uploading a tall picture, like a finished pack design, sets it to cover the whole pack and hides the printed name automatically. Both can be switched back.
 - **Inside the pack:** 1 to 10 cards, a guaranteed hit (Rare, Epic, Legendary or Exotic) and luck (×2 or ×4 for Rare and better).
 - **Which cards can come out:**
   - **Every card**
