@@ -13,6 +13,7 @@ Double-click `index.html`. It opens in your web browser, and you don't need to i
 | `game.js` | The game engine. You only need it to add new features. |
 | `builder.js` | The Build-a-pack workshop. |
 | `maker.js` | The Make-cards tab. |
+| `mart.js` | The trading mart: trader stalls, trade-up machine and trades with friends. |
 | `extras.js` | Levels, quests, streaks, achievements, card shop and auto-open. |
 | `index.html` | The page itself. |
 
@@ -127,6 +128,18 @@ Packs cost coins. New players start with 500.
   - **Daily quests:** 3 new quests every day, with coin rewards.
   - **Achievements:** 19 of them, each with a coin bounty.
 - **Settings:** XP, levels and shop prices live in `PROGRESS` in `cards.js`.
+
+## Trading mart
+- **Trader stalls:** four computer traders offer a card, often one you're missing, for your spare duplicates or for coins below shop price. Deals change every 4 hours, or you can pay 50 coins to restock early.
+- **Trade-up machine:** put in 5 spare cards of one rarity and get 1 random card of the next rarity up. Only extra copies are used, so you never lose your last one.
+- **Trade with a friend:**
+  1. Pick the cards you give and the cards you want, then press **Make trade code**. Your cards are held until the trade finishes.
+  2. Send the code to a friend. They paste it, see the offer, and accept.
+  3. They send you their reply code. You paste it and get your cards.
+  - You can cancel a waiting offer at any time to get your cards back.
+  - Each code works only once.
+  - Trades work with the cards in this set. Cards you made yourself stay in your browser and can't be traded.
+- The settings are at the top of `mart.js`.
 
 ## Colours and look
 The theme colours are at the bottom of `style.css`, under **THEME**. Change `--accent` to recolour every button and highlight.

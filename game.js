@@ -893,7 +893,7 @@
   }
   document.addEventListener("click", (e) => {
     if (e.target.closest("button, a, dialog")) return;
-    const el = e.target.closest("#grid [data-id], #hits [data-id], .hit-grid [data-id], #stage .slot.open[data-id]");
+    const el = e.target.closest("#grid [data-id], #hits [data-id], .hit-grid [data-id], #stage .slot.open[data-id], #martView .mini[data-id], #shopGrid .mini[data-id]");
     if (el) inspect(el.dataset.id);
   });
   document.addEventListener("keydown", (e) => {

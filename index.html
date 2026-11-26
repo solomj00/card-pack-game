@@ -6,7 +6,7 @@
   <title>Card Opening Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
 <canvas id="confetti" aria-hidden="true"></canvas>
@@ -20,6 +20,7 @@
       <a href="#make" id="tabMake" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Make cards</span></a>
       <a href="#build" id="tabBuild" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Build a pack</span></a>
       <a href="#shop" id="tabShop" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.5 12h-13zM8 8V6a4 4 0 018 0v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Card shop</span></a>
+      <a href="#mart" id="tabMart" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h12l-3-3M17 17H5l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Trading mart</span></a>
       <a href="#rewards" id="tabRewards" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Rewards</span><em class="tab-badge" id="rewardBadge" hidden></em></a>
       <a href="#collection" id="tabCollection" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 5v16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Collection</span></a>
     </nav>
@@ -209,6 +210,50 @@
       <div class="grid shop-grid" id="shopGrid"></div>
     </section>
 
+    <!-- Trading mart -->
+    <section id="martView" class="mart" hidden>
+      <section class="panel">
+        <div class="panel-head"><div><h2>Trader stalls</h2><p>Swap your spare cards or coins for something new. Deals change every 4 hours.</p></div>
+          <div class="head-right"><span class="hit-count" id="stallTimer"></span><button type="button" class="btn small alt" id="restock">Restock now</button></div></div>
+        <div class="stalls" id="stalls"></div>
+      </section>
+
+      <section class="panel trade-up">
+        <div class="panel-head"><div><h2>Trade-up machine</h2><p>Turn spare cards into a rarer one.</p></div></div>
+        <div class="seg up-tabs" role="radiogroup" aria-label="Rarity to trade up" id="upTabs"></div>
+        <div id="upInfo"></div>
+        <div class="actions" style="justify-content:flex-start"><button type="button" class="btn" id="tradeUpBtn">Trade up</button></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><div><h2>Trade with a friend</h2><p>Make an offer, send the code, and they send a reply code back. Works with the cards in this set.</p></div></div>
+        <div class="friend">
+          <div class="friend-make">
+            <h3>1. Make an offer</h3>
+            <div class="pick-tools">
+              <div class="seg small-seg" role="radiogroup" aria-label="Choosing">
+                <button type="button" role="radio" data-side="give">Cards I give</button>
+                <button type="button" role="radio" data-side="want">Cards I want</button>
+              </div>
+              <input type="search" id="tradeQ" placeholder="Search cards" aria-label="Search cards to trade">
+            </div>
+            <div class="trade-pick" id="tradePick"></div>
+            <div class="trade-sum" id="tradeSum"></div>
+            <div class="actions" style="justify-content:flex-start"><button type="button" class="btn" id="makeCode">Make trade code</button></div>
+            <div class="trade-out" id="tradeOut" hidden></div>
+            <div id="pending"></div>
+          </div>
+          <div class="friend-read">
+            <h3>2. Paste a code from a friend</h3>
+            <p class="muted">Paste an offer to see it and accept, or paste the reply to an offer you made.</p>
+            <textarea id="codeIn" rows="4" placeholder="TRADE-..."></textarea>
+            <div class="actions" style="justify-content:flex-start"><button type="button" class="btn alt" id="readCode">Open code</button></div>
+            <div id="codeResult"></div>
+          </div>
+        </div>
+      </section>
+    </section>
+
     <!-- Rewards: level, streak, quests, achievements -->
     <section id="rewardsView" class="rewards" hidden>
       <div class="rw-top">
@@ -272,10 +317,11 @@
 </dialog>
 
 <!-- Load order matters: your cards first, then the game -->
-<script src="cards.js?v=16"></script>
-<script src="game.js?v=16"></script>
-<script src="builder.js?v=16"></script>
-<script src="maker.js?v=16"></script>
-<script src="extras.js?v=16"></script>
+<script src="cards.js?v=18"></script>
+<script src="game.js?v=18"></script>
+<script src="builder.js?v=18"></script>
+<script src="maker.js?v=18"></script>
+<script src="extras.js?v=18"></script>
+<script src="mart.js?v=18"></script>
 </body>
 </html>

@@ -301,30 +301,33 @@
     $("workshop").hidden = view !== "build";
     $("shopView").hidden = view !== "shop";
     $("rewardsView").hidden = view !== "rewards";
+    $("martView").hidden = view !== "mart";
     $("maker").hidden = view !== "make";
     $("playView").hidden = !play;
     $("binder").hidden = view !== "collection";
     document.body.dataset.view = view;
-    [["tabPlay", "play"], ["tabMake", "make"], ["tabBuild", "build"], ["tabShop", "shop"], ["tabRewards", "rewards"], ["tabCollection", "collection"]]
+    [["tabPlay", "play"], ["tabMake", "make"], ["tabBuild", "build"], ["tabShop", "shop"], ["tabMart", "mart"], ["tabRewards", "rewards"], ["tabCollection", "collection"]]
       .forEach(([id, v]) => $(id).setAttribute("aria-current", v === view ? "page" : "false"));
     if (view === "build") { paintControls(); paintMine(); }
     if (view === "make" && window.CardMaker) window.CardMaker.paint();
     if ((view === "shop" || view === "rewards") && window.CardExtras) window.CardExtras.paint(view);
+    if (view === "mart" && window.CardMart) window.CardMart.paint();
     if (play && render && !document.querySelector("#stage .chosen, #stage .table, #stage .results")) G.showPicker();
     if (play && location.hash) history.replaceState(null, "", location.pathname + location.search);
   }
   G.go = go;
-  const route = () => go({ "#build": "build", "#make": "make", "#collection": "collection", "#shop": "shop", "#rewards": "rewards" }[location.hash] || "play");
+  const route = () => go({ "#build": "build", "#make": "make", "#collection": "collection", "#shop": "shop", "#rewards": "rewards", "#mart": "mart" }[location.hash] || "play");
   addEventListener("hashchange", route);
   $("tabPlay").onclick = (e) => { e.preventDefault(); go("play"); G.showPicker(); };
   document.querySelector(".logo").onclick = (e) => { e.preventDefault(); go("play"); G.showPicker(); };
 
   // Nothing to open yet? Start where the player needs to go next.
-  // (maker.js loads after this file, so wait a moment before the first route.)
-  setTimeout(() => {
+  // (the other scripts load after this file, so wait until they all have)
+  const firstRoute = () => {
     const noPacks = !G.myPacks.length && !(typeof PACKS !== "undefined" && PACKS.length);
     if (!location.hash && !G.cards.length) location.hash = "#make";
     else if (!location.hash && noPacks) location.hash = "#build";
     else route();
-  });
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", firstRoute); else setTimeout(firstRoute);
 }

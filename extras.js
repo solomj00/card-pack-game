@@ -136,6 +136,8 @@
     { id: "sell100", name: "Shopkeeper",       desc: "Sell 100 cards",                    reward: 200,  coins: true, test: (s, ex) => (ex.stats.sold || 0) >= 100 },
     { id: "spin10",  name: "Round and round",  desc: "Spin the prize wheel 10 times",     reward: 300,  coins: true, test: (s, ex) => (ex.stats.spins || 0) >= 10 },
     { id: "jackpot", name: "JACKPOT",          desc: "Hit the top prize on the wheel",    reward: 1000, coins: true, test: (s, ex) => (ex.stats.jackpots || 0) >= 1 },
+    { id: "trade1",  name: "Let's make a deal", desc: "Complete a trade in the trading mart", reward: 150, test: (s, ex) => (ex.stats.trades || 0) >= 1 },
+    { id: "trade10", name: "Market regular",   desc: "Complete 10 trades",                reward: 500,  test: (s, ex) => (ex.stats.trades || 0) >= 10 },
     { id: "buy5",    name: "Window shopper",   desc: "Buy 5 cards from the card shop",    reward: 200,  coins: true, test: (s, ex) => (ex.stats.bought || 0) >= 5 },
     { id: "rich",    name: "Dragon's hoard",   desc: "Have 100,000 coins at once",        reward: 500,  coins: true, test: (s) => (s.coins || 0) >= 100000 },
   ].filter((a) => coinsOn || !a.coins);
@@ -168,6 +170,7 @@
   G.on("sell", ({ n }) => { bump("sold", n); progress("sell10", n); after(); });
   G.on("spin", ({ jackpot }) => { bump("spins"); if (jackpot) bump("jackpots"); progress("spin"); after(); });
   G.on("buy", ({ isNew }) => { bump("bought"); progress("shop"); if (isNew) progress("new3"); after(); });
+  G.on("trade", () => { bump("trades"); after(); });
   G.on("makeCard", ({ n }) => { bump("made", n); after(); });
   G.on("buildPack", () => { bump("built"); after(); });
   function after() { checkAch(); G.store(); paintBadge(); if (!$("rewardsView").hidden) paintRewards(); if (!$("shopView").hidden) paintShop(); }
