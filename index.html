@@ -6,7 +6,7 @@
   <title>Card Opening Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
 <canvas id="confetti" aria-hidden="true"></canvas>
@@ -202,6 +202,18 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
+<!-- Prize wheel -->
+<dialog class="dlg wheel-dlg" id="wheelDlg" aria-labelledby="wheelTitle">
+  <div class="dlg-head"><h2 id="wheelTitle">Prize wheel</h2><button class="x" type="button" data-close aria-label="Close">×</button></div>
+  <div class="wheel-wrap">
+    <div class="wheel-pointer" aria-hidden="true"></div>
+    <svg id="wheelSvg" viewBox="-160 -160 320 320" role="img" aria-label="Prize wheel"></svg>
+    <button type="button" class="wheel-hub" id="spinHub" aria-label="Spin">SPIN</button>
+  </div>
+  <p class="wheel-msg" id="wheelMsg" aria-live="polite"></p>
+  <div class="actions"><button type="button" class="btn" id="spinBtn">Spin the wheel</button></div>
+</dialog>
+
 <!-- Stats -->
 <dialog class="dlg" id="statsDlg" aria-labelledby="statsTitle">
   <div class="dlg-head"><h2 id="statsTitle">Pack opening stats</h2><button class="x" type="button" data-close aria-label="Close">×</button></div>
@@ -215,9 +227,9 @@
 </dialog>
 
 <!-- Load order matters: your cards first, then the game -->
-<script src="cards.js?v=13"></script>
-<script src="game.js?v=13"></script>
-<script src="builder.js?v=13"></script>
-<script src="maker.js?v=13"></script>
+<script src="cards.js?v=14"></script>
+<script src="game.js?v=14"></script>
+<script src="builder.js?v=14"></script>
+<script src="maker.js?v=14"></script>
 </body>
 </html>

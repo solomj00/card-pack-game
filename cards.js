@@ -111,16 +111,23 @@ const CARDS = [
 ];
 
 // ---- 6. Coins ----------------------------------------------------------
-// Packs cost coins. Players earn coins from free claims and by selling
-// duplicate cards. Set enabled to false to make every pack free.
+// Packs cost coins. Players earn coins by spinning the prize wheel and by
+// selling duplicate cards. Set enabled to false to make every pack free.
 const COINS = {
   enabled: true,
   start: 500,             // coins a new player starts with
-  free: 150,              // coins from the "Free coins" button
-  freeEveryHours: 4,      // how often free coins can be claimed
-  perCard: 12,            // pack price per card
-  guaranteeExtra: { rare: 10, epic: 50, legendary: 200, exotic: 600 },  // added for a guaranteed slot
-  luckPrice: { 2: 1.6, 4: 2.5 },   // price multiplier for Lucky ×2 / ×4
+  spinEveryHours: 4,      // how often the prize wheel can be spun
+  // Prize wheel: each slice has a prize and a chance. Slices are drawn as big as their
+  // chance, so what you see is what you get. Chances don't have to add up to 100.
+  wheel: [
+    { coins: 500, chance: 12 },    { coins: 2500, chance: 7 },  { coins: 250, chance: 12 },
+    { coins: 10000, chance: 4 },   { coins: 1000, chance: 10 }, { coins: 100000, chance: 2 },
+    { coins: 500, chance: 12 },    { coins: 5000, chance: 6 },  { coins: 250, chance: 12 },
+    { coins: 25000, chance: 2 },   { coins: 1000, chance: 10 }, { coins: 2500, chance: 11 },
+  ],
+  perCard: 6,             // pack price per card
+  guaranteeExtra: { rare: 5, epic: 25, legendary: 100, exotic: 300 },  // added for a guaranteed slot
+  luckPrice: { 2: 1.4, 4: 2 },     // price multiplier for Lucky ×2 / ×4
   boxDiscount: 0.9,       // a box of 10 costs 90% of 10 packs
   sell: { common: 2, rare: 8, epic: 30, legendary: 120, exotic: 400 },  // coins per duplicate sold
 };

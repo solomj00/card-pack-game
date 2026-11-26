@@ -243,7 +243,8 @@
     return Math.max(5, Math.round((base * mult) / 5) * 5);
   }
   const boxPrice = (pack, n = 10) => (CO ? Math.round((priceOf(pack) * n * (CO.boxDiscount || 1)) / 5) * 5 : 0);
-  const freeWait = () => (CO ? Math.max(0, (save.lastFree || 0) + (CO.freeEveryHours || 4) * 3600e3 - Date.now()) : 0);
+  const spinHours = () => (CO ? CO.spinEveryHours || CO.freeEveryHours || 4 : 4);
+  const freeWait = () => (CO ? Math.max(0, (save.lastFree || 0) + spinHours() * 3600e3 - Date.now()) : 0);
   const sellValue = (c) => (CO ? (CO.sell || {})[c.rarity] || 0 : 0);
   const dupes = () => live().filter((c) => (save.owned[c.id] || 0) > 1);
   const dupeValue = () => dupes().reduce((t, c) => t + (save.owned[c.id] - 1) * sellValue(c), 0);
@@ -254,10 +255,11 @@
     w.hidden = false;
     $("coinBal").textContent = fmt(save.coins);
     const left = freeWait(), btn = $("freeCoins");
-    if (left <= 0) { btn.disabled = false; btn.innerHTML = `Claim ${coinTag(CO.free)} free`; }
+    btn.classList.toggle("wait", left > 0);
+    if (left <= 0) { btn.disabled = false; btn.innerHTML = `<i class="wheel-ic" aria-hidden="true"></i>Spin the wheel`; }
     else {
       const mins = Math.ceil(left / 60e3), h = Math.floor(mins / 60), m = mins % 60;
-      btn.disabled = true; btn.textContent = `Free coins in ${h ? h + "h" : ""}${h && m ? " " : ""}${m || !h ? m + "m" : ""}`;
+      btn.disabled = false; btn.textContent = `Next spin in ${h ? h + "h" : ""}${h && m ? " " : ""}${m || !h ? m + "m" : ""}`;
     }
   }
   function earn(n) {
@@ -271,16 +273,99 @@
     if (!CO || n <= 0) return true;
     if (save.coins >= n) { save.coins -= n; save.spent = (save.spent || 0) + n; store(); renderWallet(); return true; }
     const ways = [];
-    if (freeWait() <= 0) ways.push(`<button type="button" class="btn small" data-act="free">Claim ${fmt(CO.free)} free coins</button>`);
+    if (freeWait() <= 0) ways.push(`<button type="button" class="btn small" data-act="spin">Spin the prize wheel</button>`);
     if (dupeValue() > 0) ways.push(`<button type="button" class="btn small alt" data-act="sell">Sell duplicates for ${fmt(dupeValue())}</button>`);
     toast(`<b>Not enough coins.</b> You need ${fmt(n - save.coins)} more.` + (ways.length ? `<div class="toast-acts">${ways.join("")}</div>`
-      : ` Free coins come back in ${Math.ceil(freeWait() / 60e3)} min.`), 6000);
+      : ` Your next wheel spin is in ${Math.ceil(freeWait() / 60e3)} min.`), 6000);
     return false;
   }
-  function claimFree() {
-    if (!CO || freeWait() > 0) return;
-    save.lastFree = Date.now(); earn(CO.free);
-    toast(`+${fmt(CO.free)} coins! Come back in ${CO.freeEveryHours} hours for more.`);
+  // =================== Prize wheel ===================
+  const short = (n) => (n >= 1000 ? (n / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + "K" : String(n));
+  const SLICE_COLORS = ["#ff2e7e", "#7d4cff", "#2f8fd1", "#14a06b", "#ff8a3d", "#b35cff", "#00b3c7", "#e0457b"];
+  let wheelRot = 0, spinning = false;
+  const wheelSlices = () => (CO && Array.isArray(CO.wheel) && CO.wheel.length ? CO.wheel : [{ coins: 100 }])
+    .map((s) => (typeof s === "number" ? { coins: s, chance: 1 } : { coins: +s.coins || 0, chance: s.chance > 0 ? +s.chance : 1 }));
+  function drawWheel() {
+    const sl = wheelSlices(), total = sl.reduce((t, s) => t + s.chance, 0), top = Math.max(...sl.map((s) => s.coins));
+    const R = 150, pt = (deg, r) => [r * Math.sin((deg * Math.PI) / 180), -r * Math.cos((deg * Math.PI) / 180)];
+    let at = 0, out = "";
+    sl.forEach((s, i) => {
+      const span = (s.chance / total) * 360, a0 = at, a1 = at + span, mid = at + span / 2;
+      s.mid = mid; at = a1;
+      const [x0, y0] = pt(a0, R), [x1, y1] = pt(a1, R), jackpot = s.coins === top;
+      const fill = jackpot ? "url(#gold)" : SLICE_COLORS[i % SLICE_COLORS.length];
+      out += `<path d="M0 0 L${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 ${span > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}Z" fill="${fill}" stroke="#0d1220" stroke-width="2"/>`;
+      // labels run along the radius so even thin slices fit
+      const fs = Math.max(9, Math.min(17, (span / 360) * 2 * Math.PI * 95 * 0.62));
+      const flip = mid > 180;   // keep labels on the left half the right way up
+      out += `<text transform="rotate(${(mid - 90).toFixed(2)}) translate(${R - 12} 0)${flip ? " rotate(180)" : ""}" text-anchor="${flip ? "start" : "end"}" dominant-baseline="central"
+        font-size="${fs.toFixed(1)}" font-weight="800" fill="${jackpot ? "#4a3206" : "#fff"}" font-family="Sora, sans-serif">${short(s.coins)}</text>`;
+    });
+    $("wheelSvg").innerHTML = `<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset=".5" stop-color="#ffcf33"/><stop offset="1" stop-color="#c58b14"/></linearGradient></defs>
+      <g id="wheelRot" style="transform:rotate(${wheelRot}deg)">${out}</g>
+      <circle r="${R + 4}" fill="none" stroke="#ffcf33" stroke-width="6"/>
+      ${Array.from({ length: 24 }, (_, i) => { const [x, y] = pt(i * 15, R + 4); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#fff8d6"/>`; }).join("")}`;
+    return sl;
+  }
+  function paintWheel() {
+    const left = freeWait(), ready = left <= 0 && !spinning;
+    $("spinBtn").disabled = !ready; $("spinHub").disabled = !ready;
+    if (!spinning) $("wheelMsg").innerHTML = left > 0
+      ? `Next spin in <b>${$("freeCoins").textContent.replace("Next spin in ", "")}</b>. You can spin once every ${spinHours()} hours.`
+      : `Spin to win up to <b>${fmt(Math.max(...wheelSlices().map((s) => s.coins)))}</b> coins!`;
+  }
+  function openWheel() {
+    if (!CO) return;
+    drawWheel(); paintWheel();
+    const d = $("wheelDlg"); if (!d.open) d.showModal();
+    d.append($("confetti"));               // so confetti shows on top of the dialog
+  }
+  $("wheelDlg").addEventListener("close", () => document.body.prepend($("confetti")));
+  function spinWheel() {
+    if (!CO || spinning || freeWait() > 0) return;
+    const sl = drawWheel(), total = sl.reduce((t, s) => t + s.chance, 0);
+    let roll = Math.random() * total, win = sl[sl.length - 1];
+    for (const s of sl) { roll -= s.chance; if (roll <= 0) { win = s; break; } }
+    spinning = true;
+    save.lastFree = Date.now(); store(); renderWallet();   // the spin is used as soon as it starts
+    const span = (win.chance / total) * 360, jitter = (Math.random() - 0.5) * span * 0.7;
+    const target = wheelRot + 360 * 6 + ((((-win.mid - jitter - wheelRot) % 360) + 360) % 360);
+    const g2 = $("wheelRot"), dur = calm ? 0.01 : 5;
+    $("wheelMsg").textContent = "Spinning…"; paintWheel();
+    g2.style.transition = `transform ${dur}s cubic-bezier(.12,.72,.12,1)`;
+    requestAnimationFrame(() => { g2.style.transform = `rotate(${target}deg)`; });
+    // tick sound as slices pass the pointer
+    let last = wheelRot, t0 = performance.now();
+    const tick = () => {
+      const m = getComputedStyle(g2).transform;
+      if (m && m !== "none") {
+        const [a, b] = m.slice(7, -1).split(",").map(Number);
+        const deg = ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360;
+        if (Math.abs(deg - (last % 360)) > 12) { tone(1400, 0, .025, "square", .03); last = deg; }
+      }
+      if (performance.now() - t0 < dur * 1000) requestAnimationFrame(tick);
+    };
+    if (!calm) requestAnimationFrame(tick);
+    setTimeout(() => {
+      wheelRot = target; spinning = false;
+      earn(win.coins);
+      const top = Math.max(...sl.map((s) => s.coins)), big = win.coins >= top / 10;
+      $("wheelMsg").innerHTML = win.coins === top ? `<b class="jackpot">JACKPOT! +${fmt(win.coins)} coins!</b>` : `You won <b>+${fmt(win.coins)}</b> coins!`;
+      if (big) { sfx.hype(win.coins === top ? 3 : 2); confetti(win.coins === top ? 260 : 120, ["#ffcf33", "#fff3c4", "#ff2e7e", "#7af6ff"]); }
+      $("spinBtn").disabled = true; $("spinHub").disabled = true;
+    }, dur * 1000 + 100);
+  }
+  $("spinBtn").onclick = spinWheel; $("spinHub").onclick = spinWheel;
+  const claimFree = openWheel;
+
+  // =================== Selling ===================
+  // Sell one copy of a card (used right after opening a pack)
+  function sellOne(c) {
+    if (!CO || !save.owned[c.id]) return 0;
+    save.owned[c.id]--;
+    if (!save.owned[c.id]) delete save.owned[c.id];
+    earn(sellValue(c));
+    return sellValue(c);
   }
   function sellDupes() {
     const total = dupeValue(), n = dupes().reduce((t, c) => t + save.owned[c.id] - 1, 0);
@@ -297,7 +382,7 @@
   }
   $("toast").addEventListener("click", (e) => {
     const b = e.target.closest("[data-act]"); if (!b) return;
-    if (b.dataset.act === "free") claimFree();
+    if (b.dataset.act === "spin") openWheel();
     if (b.dataset.act === "sell") sellDupes();
   });
   $("freeCoins").onclick = claimFree;
@@ -515,11 +600,13 @@
           <div class="slot${animate ? "" : " open"}${r.shine ? " shine" : ""}${best ? " best" : ""}" style="--glow:${esc(r.glow || "#fff")}">
             <div class="flip"><div class="face back"></div><div class="face front">${cardHTML(c)}${badge(r)}</div></div>
           </div>
-          <div class="tag"${animate ? "" : ' style="opacity:1"'}>${isNew[i] ? '<span class="newtag">New!</span>' : "&nbsp;"}</div></div>`;
+          <div class="tag"${animate ? "" : ' style="opacity:1"'}>${isNew[i] ? '<span class="newtag">New!</span>' : "&nbsp;"}
+            ${CO ? `<button type="button" class="sell-btn" data-sell="${i}">Sell ${coinTag(sellValue(c))}</button>` : ""}</div></div>`;
       }).join("")}</div>
       <div class="actions" id="resultActions"${animate ? " hidden" : ""}>
         ${lastPack ? `<button class="btn" id="again">Open another ${esc(lastPack.name)}${CO ? " · " + coinTag(priceOf(lastPack)) : ""}</button>` : ""}
-        <button class="btn alt" id="choose">Choose a different pack</button></div></div>`;
+        <button class="btn alt" id="choose">Choose a different pack</button>
+        ${CO ? `<button class="btn alt" id="sellAll">Sell all ${coinTag(pulls.reduce((t, c) => t + sellValue(c), 0))}</button>` : ""}</div></div>`;
     const slots = [...document.querySelectorAll("#stage .slot")];
     slots.forEach((slot) => {
       slot.onpointermove = (e) => {
@@ -549,6 +636,29 @@
     const again = $("again");
     if (again) { again.onclick = () => window.CardGame.openNow(lastPack); again.focus({ preventScroll: true }); }
     $("choose").onclick = showPack;
+    if (CO) {
+      const sold = new Set();
+      const sellAt = (i) => {
+        if (sold.has(i)) return 0;
+        sold.add(i);
+        const v = sellOne(pulls[i]);
+        const btn = document.querySelector(`#stage [data-sell="${i}"]`);
+        btn.disabled = true; btn.innerHTML = `Sold +${fmt(v)}`;
+        btn.closest(".tag").previousElementSibling.classList.add("sold");
+        return v;
+      };
+      const paintSellAll = () => {
+        const left = pulls.reduce((t, c, i) => t + (sold.has(i) ? 0 : sellValue(c)), 0), b = $("sellAll");
+        if (!b) return;
+        b.disabled = !left; b.innerHTML = left ? `Sell all ${coinTag(left)}` : "All sold";
+      };
+      document.querySelectorAll("#stage [data-sell]").forEach((b) => { b.onclick = () => { sellAt(+b.dataset.sell); paintSellAll(); renderBinder(); }; });
+      $("sellAll").onclick = () => {
+        let total = 0; pulls.forEach((c, i) => { total += sellAt(i); });
+        paintSellAll(); renderBinder();
+        if (total) toast(`Sold the whole pack for ${fmt(total)} coins.`);
+      };
+    }
     spaceAction = lastPack ? () => window.CardGame.openNow(lastPack) : showPack;
   }
 
@@ -571,11 +681,17 @@
       <h3>Hits <span class="muted">(${hits.length})</span></h3>
       ${hits.length ? `<div class="hit-grid in-dlg">${hits.map((c) => hitHTML(c, fresh.has(c.id) ? "New!" : "")).join("")}</div>`
         : `<p class="muted">No rare cards in this box. Unlucky!</p>`}
-      <div class="actions"><button class="btn" id="boxAgain">Open another box${CO ? " · " + coinTag(boxPrice(packDef, n)) : ""}</button><button class="btn alt" data-close>Done</button></div>`;
+      <div class="actions"><button class="btn" id="boxAgain">Open another box${CO ? " · " + coinTag(boxPrice(packDef, n)) : ""}</button>
+        ${CO ? `<button class="btn alt" id="boxSell">Sell everything ${coinTag(all.reduce((t, c) => t + sellValue(c), 0))}</button>` : ""}<button class="btn alt" data-close>Done</button></div>`;
     const d = $("boxDlg");
     if (!d.open) d.showModal();
     d.querySelector(".dlg-body, #boxBody").scrollTop = 0;
     $("boxAgain").onclick = () => openBox(packDef, n);
+    if (CO) $("boxSell").onclick = () => {
+      let total = 0; all.forEach((c) => { total += sellOne(c); });
+      const b = $("boxSell"); b.disabled = true; b.textContent = `Sold for ${fmt(total)} coins`;
+      renderBinder();
+    };
     if (top) { sfx.charge(); setTimeout(() => celebrate(top), 300); }
   }
 

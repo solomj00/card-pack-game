@@ -99,12 +99,15 @@ If there are no packs yet, the site starts in the workshop.
 
 ## Coins
 Packs cost coins. New players start with 500.
-- **Prices** depend on how many cards a pack has, its guaranteed hit and its luck. Each pack shows its price, and the pack builder shows the price as you design. A box of 10 costs 10% less than 10 packs.
-- **Earning coins:**
-  - **Free coins:** claim 150 every 4 hours with the button in the sidebar.
-  - **Selling duplicates:** on the Collection tab, sell every extra copy and keep one of each. Rarer cards sell for more.
-- **Not enough coins?** The game tells you how many more you need and offers free coins or selling duplicates, whichever is available.
-- **Settings:** edit `COINS` at the bottom of `cards.js` to change the starting coins, free amount and timer, prices, box discount and sell values. Set `enabled: false` to make every pack free. A ready-made pack can set its own `price`.
+- **Prices** depend on how many cards a pack has, its guaranteed hit and its luck. A basic 5-card pack is 35 coins. Each pack shows its price, and the pack builder shows the price as you design. A box of 10 costs 10% less than 10 packs.
+- **Prize wheel:** spin it every 4 hours with the button in the sidebar. Prizes run from 250 up to a 100,000-coin jackpot. Each slice is drawn as big as its chance, so the thin gold jackpot slice really is rare, about 1 in 50 spins.
+- **Selling:**
+  - **Right after opening:** every card in the results has a **Sell** button, and **Sell all** sells the whole pack.
+  - **Booster box:** **Sell everything** sells the whole box.
+  - **Collection:** **Sell duplicates** keeps one of each card and sells the extras.
+  - Rarer cards sell for more.
+- **Not enough coins?** The game tells you how many more you need and offers a wheel spin or selling duplicates, whichever is available.
+- **Settings:** edit `COINS` at the bottom of `cards.js` to change the starting coins, wheel prizes and chances, spin timer, prices, box discount and sell values. Set `enabled: false` to make every pack free. A ready-made pack can set its own `price`.
 - **Starting over:** **Reset collection** also resets your coins to the starting amount.
 
 ## Colours and look
