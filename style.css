@@ -631,3 +631,14 @@ dialog.dlg::backdrop { background: rgba(5, 8, 15, .72); backdrop-filter: blur(3p
 .pack .label + .sub { z-index: 1; }
 .about .pack-name { color: #fff; font: 700 15px var(--title-font); }
 .ws-switch { min-height: 40px; font-weight: 600; }
+
+/* cover picker */
+.thumb-box { display: grid; gap: 10px; }
+.small-seg button { min-height: 36px; padding: 4px 12px; font-size: 13px; }
+.thumb { position: relative; }
+.thumb.tall img { aspect-ratio: 5 / 7; object-position: top; }
+.thumb-ph { display: grid; place-items: center; aspect-ratio: 4 / 3; border-radius: 6px; background: #222c40; font: 700 18px var(--title-font); color: var(--muted); }
+.thumb-yours { position: absolute; top: 6px; left: 6px; background: var(--accent); color: #fff; font: 700 11px var(--body-font); font-style: normal; padding: 1px 6px; border-radius: 999px; }
+.thumbs-empty { grid-column: 1 / -1; margin: 6px 0; }
+.thumbs-empty a { color: var(--accent); }
+.hit-count:empty { display: none; }

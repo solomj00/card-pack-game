@@ -6,7 +6,7 @@
   <title>Card Opening Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 <canvas id="confetti" aria-hidden="true"></canvas>
@@ -134,7 +134,13 @@
             <div class="field">Finish<div class="chips" id="wsFinish" role="radiogroup"></div></div>
             <div class="field">Cover art
               <div class="chips" id="wsCoverMode" role="radiogroup"></div>
-              <div class="thumbs" id="wsThumbs"></div>
+              <div class="thumb-box" id="wsThumbBox" hidden>
+                <div class="pick-tools">
+                  <div class="seg small-seg" role="radiogroup" aria-label="Which cards" id="wsThumbFilter"></div>
+                  <input type="search" id="wsThumbQ" placeholder="Search cards" aria-label="Search cards for the cover">
+                </div>
+                <div class="thumbs" id="wsThumbs"></div>
+              </div>
               <label class="upload" id="wsUploadL" hidden><input type="file" id="wsUpload" accept="image/*"><span id="wsUploadT">Choose a picture</span></label>
             </div>
             <div class="field" id="wsArtSizeF">Art size<div class="chips" id="wsArtSize" role="radiogroup"></div>
@@ -203,9 +209,9 @@
 </dialog>
 
 <!-- Load order matters: your cards first, then the game -->
-<script src="cards.js?v=11"></script>
-<script src="game.js?v=11"></script>
-<script src="builder.js?v=11"></script>
-<script src="maker.js?v=11"></script>
+<script src="cards.js?v=12"></script>
+<script src="game.js?v=12"></script>
+<script src="builder.js?v=12"></script>
+<script src="maker.js?v=12"></script>
 </body>
 </html>

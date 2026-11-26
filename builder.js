@@ -26,6 +26,7 @@
     guarantee: RARITY_KEYS[1] || "", luck: 1, types: [], poolMode: "all", cards: [],
   });
   let pickQ = "", pickR = "";
+  let coverQ = "", coverFilter = "";   // "" = My cards when you have some, otherwise All cards
   let s = fresh();
 
   // ---------- Turn the form state into a pack ----------
@@ -107,9 +108,8 @@
     const types = Object.keys(TYPES).filter((t) => CARDS.some((c) => c.type === t));
     $("wsTypes").innerHTML = types.map((t) =>
       `<button type="button" class="chip" aria-pressed="${s.types.includes(t)}" data-type="${esc(t)}">${esc(t)}</button>`).join("");
-    $("wsThumbs").hidden = s.coverMode !== "card";
-    $("wsThumbs").innerHTML = CARDS.map((c) =>
-      `<button type="button" class="thumb" data-card="${c.id}" aria-pressed="${String(s.coverCard) === String(c.id)}" aria-label="${esc(c.name)}"><img src="${esc(c.image)}" alt="" onerror="this.remove()"><span>${esc(c.name)}</span></button>`).join("");
+    $("wsThumbBox").hidden = s.coverMode !== "card";
+    paintThumbs();
     $("wsUploadL").hidden = s.coverMode !== "upload";
     $("wsArtSizeF").hidden = s.coverMode === "none";
     $("wsArtSize").innerHTML = ART_SIZES.map(([v, l]) => chip("artSize", v, l, s.artSize === v)).join("");
@@ -122,6 +122,26 @@
     $("wsDelete").hidden = !s.id;
     paintPreview();
   }
+
+  // ---------- Cover: pick a card (your uploaded cards first) ----------
+  function paintThumbs() {
+    if (s.coverMode !== "card") return;
+    const mineCards = G.myCards;
+    const filter = coverFilter || (mineCards.length ? "mine" : "all");
+    $("wsThumbFilter").innerHTML = [["mine", `My cards (${mineCards.length})`], ["all", "All cards"]].map(([v, l]) =>
+      `<button type="button" role="radio" data-tf="${v}" aria-checked="${filter === v}">${l}</button>`).join("");
+    const base = filter === "mine" ? mineCards : [...mineCards, ...G.cards.filter((c) => !c.custom)];
+    const list = base.filter((c) => !coverQ || `${c.name} ${c.type}`.toLowerCase().includes(coverQ.toLowerCase()));
+    $("wsThumbs").innerHTML = list.length ? list.map((c) =>
+      `<button type="button" class="thumb${c.art === "card" ? " tall" : ""}" data-card="${esc(c.id)}" aria-pressed="${String(s.coverCard) === String(c.id)}" aria-label="${esc(c.name)}">
+        ${c.image ? `<img src="${esc(c.image)}" alt="" onerror="this.remove()">` : `<span class="thumb-ph">${esc(c.name.slice(0, 2))}</span>`}
+        ${c.custom ? '<em class="thumb-yours">Yours</em>' : ""}<span>${esc(c.name)}</span></button>`).join("")
+      : filter === "mine" && !mineCards.length
+        ? `<p class="muted thumbs-empty">You haven't made any cards yet. <a href="#make">Upload some on Make cards →</a></p>`
+        : `<p class="muted thumbs-empty">No cards match.</p>`;
+  }
+  $("wsThumbFilter").addEventListener("click", (e) => { const b = e.target.closest("[data-tf]"); if (b) { coverFilter = b.dataset.tf; paintThumbs(); } });
+  $("wsThumbQ").addEventListener("input", (e) => { coverQ = e.target.value.trim(); paintThumbs(); });
 
   // ---------- Pick cards ----------
   const shownCards = () => G.cards.filter((c) =>
@@ -170,14 +190,20 @@
     } else if (b.dataset.g) {
       const v = b.dataset.g === "luck" ? +b.dataset.v : b.dataset.v;
       s[b.dataset.g] = v;
-      if (b.dataset.g === "coverMode" && v === "card" && s.coverCard == null && G.cards[0]) s.coverCard = G.cards[0].id;
+      if (b.dataset.g === "coverMode" && v === "card" && s.coverCard == null) {
+        const first = G.myCards.find((c) => c.image) || G.cards[0];
+        if (first) s.coverCard = first.id;
+        if (first && first.art === "card") { s.artSize = "whole"; s.showName = false; }
+      }
       paintControls();
     } else if (b.dataset.type) {
       const t = b.dataset.type;
       s.types = s.types.includes(t) ? s.types.filter((x) => x !== t) : s.types.concat(t);
       paintControls();
     } else if (b.dataset.card != null) {
-      const c = G.byId(b.dataset.card); s.coverCard = c ? c.id : null; paintControls();
+      const c = G.byId(b.dataset.card); s.coverCard = c ? c.id : null;
+      if (c && c.art === "card" && s.artSize !== "whole") { s.artSize = "whole"; s.showName = false; say("That's a finished card, so it covers the whole pack with the name hidden. You can change either below."); }
+      paintControls();
     } else if (b.dataset.i != null) {
       [s.color, s.color2] = PALETTES[+b.dataset.i]; paintControls();
     }
