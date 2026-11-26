@@ -5,10 +5,10 @@
 
 // ---- 1. Your set -----------------------------------------------------
 const SET = {
-  name: "Dragon's Hoard",     // shown at the top of the page
+  name: "My Card Set",        // shown at the top of the page
   cardBack: "#1b1214",        // colour of the back of every card
   saveKey: "myCardSet-v1",    // change this to start a fresh save
-  version: 2,                 // bump this when you replace the cards below, so old pulls reset
+  version: 3,                 // bump this when you replace the cards below, so old pulls reset
 };
 
 // ---- 2. Rarities -----------------------------------------------------
@@ -68,50 +68,15 @@ const TYPES = {
 };
 
 // ---- 5. Your cards ---------------------------------------------------
-// The built-in set: Dragon's Hoard, with original art made by tools/make_art.py.
-// image: a file inside the images folder, e.g. "images/my-card.png"
-// art:   (optional) "full" = picture fills the whole card, "framed" = normal card.
-//        Leave it out to use the rarity's setting.
-// frame: (optional) "gold" or "rainbow" border, overriding the rarity's frame.
-// If the picture is missing, the card shows a placeholder instead.
-// Copy a line and change it to add a card.
+// Cards built into the site, so everyone who visits gets them. It's empty:
+// players make their own cards on the "Make cards" tab instead.
+// To add a card for everyone, put its picture in the images folder and add a line:
+//   { name: "Blaze", type: "Fire", rarity: "rare", hp: 90, move: "Fire Spin", damage: 60, image: "images/blaze.png" },
+// image: a file inside the images folder
+// art:   (optional) "full" = picture fills the whole card, "framed" = normal card,
+//        "card" = the picture is already a finished card. Leave it out to use the rarity's setting.
+// frame: (optional) "gold", "rainbow" or "cosmic" border, overriding the rarity's frame.
 const CARDS = [
-  // Fire line
-  { name: "Kindlewing",  type: "Fire",     rarity: "common",       hp: 50,  move: "Ember Hop",     damage: 20,  image: "images/kindlewing.svg" },
-  { name: "Scorchtail",  type: "Fire",     rarity: "rare",         hp: 90,  move: "Tail Flare",    damage: 50,  image: "images/scorchtail.svg" },
-  { name: "Pyrewyrm",    type: "Fire",     rarity: "epic",         hp: 160, move: "Furnace Roar",  damage: 120, image: "images/pyrewyrm.svg" },
-  { name: "Pyrewyrm",    type: "Fire",     rarity: "legendary",    hp: 160, move: "Furnace Roar",  damage: 120, image: "images/pyrewyrm-full.svg" },
-  { name: "Pyrewyrm",    type: "Fire",     rarity: "exotic",       hp: 170, move: "Sunfall",       damage: 200, image: "images/pyrewyrm-sir.svg" },
-  // Water line
-  { name: "Ripplefin",   type: "Water",    rarity: "common",       hp: 50,  move: "Splash Nip",    damage: 20,  image: "images/ripplefin.svg" },
-  { name: "Tidecoil",    type: "Water",    rarity: "rare",         hp: 90,  move: "Riptide",       damage: 50,  image: "images/tidecoil.svg" },
-  { name: "Abyssrex",    type: "Water",    rarity: "epic",         hp: 150, move: "Deep Current",  damage: 110, image: "images/abyssrex.svg" },
-  { name: "Ripplefin",   type: "Water",    rarity: "legendary",    hp: 60,  move: "Moonlit Swim",  damage: 30,  image: "images/ripplefin-ir.svg" },
-  // Grass line
-  { name: "Mossnout",    type: "Grass",    rarity: "common",       hp: 60,  move: "Leaf Sneeze",   damage: 20,  image: "images/mossnout.svg" },
-  { name: "Thornback",   type: "Grass",    rarity: "rare",         hp: 100, move: "Bramble Bash",  damage: 60,  image: "images/thornback.svg" },
-  { name: "Verdragor",   type: "Grass",    rarity: "epic",         hp: 160, move: "Old Growth",    damage: 120, image: "images/verdragor.svg" },
-  { name: "Mossnout",    type: "Grass",    rarity: "legendary",    hp: 60,  move: "Leaf Sneeze",   damage: 20,  image: "images/mossnout-gallery.svg" },
-  // Electric line
-  { name: "Sparkhatch",  type: "Electric", rarity: "common",       hp: 50,  move: "Static Peep",   damage: 20,  image: "images/sparkhatch.svg" },
-  { name: "Voltwyrm",    type: "Electric", rarity: "epic",         hp: 140, move: "Storm Coil",    damage: 110, image: "images/voltwyrm.svg" },
-  { name: "Voltwyrm",    type: "Electric", rarity: "legendary",    hp: 140, move: "Storm Coil",    damage: 110, image: "images/voltwyrm-full.svg" },
-  // Ghost line
-  { name: "Wispwing",    type: "Ghost",    rarity: "rare",         hp: 60,  move: "Fade Out",      damage: 30,  image: "images/wispwing.svg" },
-  { name: "Duskdrake",   type: "Ghost",    rarity: "epic",         hp: 150, move: "Eclipse Wing",  damage: 120, image: "images/duskdrake.svg" },
-  { name: "Duskdrake",   type: "Ghost",    rarity: "legendary",    hp: 150, move: "Eclipse Wing",  damage: 120, image: "images/duskdrake-ir.svg" },
-  // Rock line
-  { name: "Pebblehorn",  type: "Rock",     rarity: "common",       hp: 70,  move: "Headbutt",      damage: 20,  image: "images/pebblehorn.svg" },
-  { name: "Cragmaw",     type: "Rock",     rarity: "rare",         hp: 120, move: "Landslide",     damage: 70,  image: "images/cragmaw.svg" },
-  // Normal
-  { name: "Puffscale",   type: "Normal",   rarity: "common",       hp: 50,  move: "Cloud Nap",     damage: 10,  image: "images/puffscale.svg" },
-  { name: "Glimmerkin",  type: "Normal",   rarity: "rare",         hp: 80,  move: "Dazzle",        damage: 40,  image: "images/glimmerkin.svg" },
-  // The legend
-  { name: "Elder Aurex", type: "Dragon",   rarity: "legendary",    hp: 220, move: "Aurora Breath", damage: 180, image: "images/aurex.svg", art: "framed" },
-  { name: "Elder Aurex", type: "Dragon",   rarity: "exotic",       hp: 230, move: "Northern Sky",  damage: 220, image: "images/aurex-sir.svg" },
-  { name: "Elder Aurex", type: "Dragon",   rarity: "exotic",       hp: 250, move: "Hoard of Ages", damage: 250, image: "images/aurex-gold.svg", frame: "gold" },
-  // The impossible one (about 1 in 5,000 cards)
-  { name: "Nullwyrm",    type: "Dragon",   rarity: "impossible",   hp: 999, move: "Erase Reality", damage: 999, image: "images/nullwyrm-impossible.svg" },
 ];
 
 // ---- 6. Coins ----------------------------------------------------------

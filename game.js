@@ -924,6 +924,7 @@
     get cards() { return live(); },
     get myCards() { return myCards; },
     get useSamples() { return useSamples; },
+    get builtInCount() { return BUILT_IN; },
     saveMyCards(list) {
       try { localStorage.setItem(SET.saveKey + "-cards", JSON.stringify(list)); } catch (e) { return false; }
       myCards = list; syncCards(); renderBinder(); return true;

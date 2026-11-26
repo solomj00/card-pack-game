@@ -23,8 +23,13 @@
   };
   const owned = (id) => G.save.owned[id] || 0;
   const spare = (c) => Math.max(0, owned(c.id) - 1);
-  const builtIn = () => G.cards.filter((c) => !c.custom);
+  const tradeable = () => G.cards;
   const take = (id, n = 1) => { G.save.owned[id] = owned(id) - n; if (G.save.owned[id] <= 0) delete G.save.owned[id]; };
+  // A card made in someone else's browser arrives with its details; save it here first
+  function ensureCard(card) {
+    if (!card || G.byId(card.id)) return;
+    G.saveMyCards(G.myCards.concat({ ...card, custom: true }));
+  }
   const give = (id, n = 1) => {
     const c = G.byId(id);
     G.save.owned[id] = owned(id) + n;
@@ -121,22 +126,46 @@
     } catch (e) { return null; }
   }
   // Cards are sent by their number in the set plus their name, so both sides agree
-  const ref = (c, n) => ({ i: c.id, name: c.name, n });
-  const resolve = (list) => (list || []).map((x) => ({ c: G.byId(x.i), n: x.n, name: x.name })).filter((x) => x.c && x.c.name === x.name && !x.c.custom);
+  // Built-in cards travel as their number; cards people made travel with their details and a small picture
+  const ref = (c, n, card) => (card ? { i: c.id, name: c.name, n, card } : { i: c.id, name: c.name, n });
+  const resolve = (list) => (list || []).map((x) => {
+    const c = G.byId(x.i) || (x.card ? { ...x.card, id: x.i, custom: true } : null);
+    return { c, n: x.n, name: x.name, card: x.card };
+  }).filter((x) => x.c && x.c.name === x.name);
+  // Shrink a made card's picture so the trade code stays a sensible size
+  const packCard = (c) => new Promise((done) => {
+    const base = { id: c.id, name: c.name, type: c.type, rarity: c.rarity, hp: c.hp, move: c.move, damage: c.damage, art: c.art || "" };
+    if (!c.image) return done(base);
+    const im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 300 / Math.max(im.width, im.height)), cv = document.createElement("canvas");
+      cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
+      cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
+      done({ ...base, image: cv.toDataURL("image/jpeg", 0.6) });
+    };
+    im.onerror = () => done(base);
+    im.src = c.image;
+  });
   const sameSet = (o) => o && o.set === SET.name;
 
   let draft = { give: {}, want: {} }, side = "give", q = "";
-  function makeCode() {
+  async function makeCode() {
     const giveL = Object.entries(draft.give).filter(([, n]) => n > 0), wantL = Object.entries(draft.want).filter(([, n]) => n > 0);
     if (!giveL.length && !wantL.length) { G.toast("Pick at least one card to give or to get."); return; }
     for (const [id, n] of giveL) if (owned(id) < n) { G.toast("You don't have enough of a card you're giving."); return; }
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const offer = { t: "offer", v: 1, set: SET.name, id, give: giveL.map(([i, n]) => ref(G.byId(i), n)), want: wantL.map(([i, n]) => ref(G.byId(i), n)) };
+    const refs = async (list, withData) => Promise.all(list.map(async ([i, n]) => {
+      const c = G.byId(i);
+      return ref(c, n, withData && c.custom ? await packCard(c) : null);
+    }));
+    // cards you give carry their details (your friend may not have them); cards you want are ones your friend has
+    const offer = { t: "offer", v: 1, set: SET.name, id, give: await refs(giveL, true), want: await refs(wantL, true) };
     giveL.forEach(([i, n]) => take(i, n));           // held until the trade finishes or you cancel
     M().pending[id] = { give: offer.give, want: offer.want, t: Date.now() };
     G.store(); G.renderBinder();
     draft = { give: {}, want: {} };
-    showCode(enc(offer), "Send this code to your friend. Your cards are held until they reply or you cancel.");
+    const code = enc(offer);
+    showCode(code, `Send this code to your friend. Your cards are held until they reply or you cancel.${code.length > 20000 ? " It's long because it carries your cards' pictures, so copy the whole thing." : ""}`);
     paint();
   }
   function showCode(code, note) {
@@ -165,7 +194,7 @@
           : `<p class="bad">You don't have all the cards they want.</p>`}`;
       if (ok) $("acceptTrade").onclick = () => {
         theyWant.forEach((x) => take(x.c.id, x.n));
-        theyGive.forEach((x) => give(x.c.id, x.n));
+        theyGive.forEach((x) => { ensureCard(x.card ? { ...x.card, id: x.c.id } : null); give(x.c.id, x.n); });
         m.done[o.id] = Date.now();
         box.innerHTML = "";
         $("codeIn").value = "";
@@ -175,7 +204,7 @@
     } else if (o.t === "reply") {
       const p = m.pending[o.id];
       if (!p) { box.innerHTML = `<p class="bad">${m.done[o.id] ? "This trade is already finished." : "That reply isn't for an offer from this browser."}</p>`; return; }
-      resolve(p.want).forEach((x) => give(x.c.id, x.n));
+      resolve(p.want).forEach((x) => { ensureCard(x.card ? { ...x.card, id: x.c.id } : null); give(x.c.id, x.n); });
       delete m.pending[o.id]; m.done[o.id] = Date.now();
       $("codeIn").value = ""; box.innerHTML = "";
       done("Your friend accepted! Their cards are in your collection.");
@@ -227,7 +256,7 @@
   }
   function paintFriend() {
     const m = M();
-    const cards = builtIn().filter((c) => (side === "give" ? owned(c.id) > 0 : true)
+    const cards = tradeable().filter((c) => (side === "give" ? owned(c.id) > 0 : true)
       && (!q || `${c.name} ${c.type} ${G.rarityOf(c).label}`.toLowerCase().includes(q.toLowerCase())));
     document.querySelectorAll("[data-side]").forEach((b) => b.setAttribute("aria-checked", b.dataset.side === side));
     const pick = draft[side];
@@ -236,7 +265,7 @@
       return `<div class="tp${n ? " on" : ""}">${miniCard(c, side === "give" ? `<span class="count">×${owned(c.id)}</span>` : "")}
         <div class="stepper"><button type="button" data-step="-1" data-c="${esc(c.id)}" aria-label="Less"${n ? "" : " disabled"}>−</button><b>${n}</b>
         <button type="button" data-step="1" data-c="${esc(c.id)}" aria-label="More"${n >= max ? " disabled" : ""}>+</button></div></div>`;
-    }).join("") : `<p class="muted">${side === "give" ? "You don't own any set cards to trade yet." : "No cards match."}</p>`;
+    }).join("") : `<p class="muted">${side === "give" ? "You don't own any cards to trade yet. Open some packs first." : "No cards match."}</p>`;
     const sum = (o) => Object.entries(o).filter(([, n]) => n > 0).map(([id, n]) => `${n}× ${esc(G.byId(id)?.name || "?")}`).join(", ") || "nothing yet";
     $("tradeSum").innerHTML = `<div><span class="lbl">You give</span> ${sum(draft.give)}</div><div><span class="lbl">You want</span> ${sum(draft.want)}</div>`;
     const pend = Object.entries(m.pending);

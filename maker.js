@@ -102,6 +102,7 @@
     const list = G.myCards;
     $("mkCount").textContent = list.length ? `(${list.length})` : "";
     $("mkSamples").checked = G.useSamples;
+    $("mkSamples").closest(".switch").hidden = !G.builtInCount;   // no built-in cards: nothing to switch
     $("mkMine").innerHTML = list.length ? list.map((c) =>
       `<button type="button" class="mk-mini${RARITIES[c.rarity]?.shine ? " shine" : ""}" data-id="${esc(c.id)}" aria-current="${c.id === s.id}" aria-label="Edit ${esc(c.name)}">${G.cardHTML(c)}</button>`).join("")
       : `<p class="mk-empty">No cards yet. Your first card will show up here.</p>`;

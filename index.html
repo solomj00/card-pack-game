@@ -6,7 +6,7 @@
   <title>Card Opening Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=18">
+  <link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
 <canvas id="confetti" aria-hidden="true"></canvas>
@@ -120,7 +120,7 @@
       <div class="ws-mine">
         <div class="mk-mine-head">
           <h2>Your cards <span id="mkCount"></span></h2>
-          <label class="switch"><input type="checkbox" id="mkSamples"><span>Also use the sample cards</span></label>
+          <label class="switch" hidden><input type="checkbox" id="mkSamples"><span>Also use the sample cards</span></label>
         </div>
         <div class="mk-grid" id="mkMine"></div>
       </div>
@@ -226,7 +226,7 @@
       </section>
 
       <section class="panel">
-        <div class="panel-head"><div><h2>Trade with a friend</h2><p>Make an offer, send the code, and they send a reply code back. Works with the cards in this set.</p></div></div>
+        <div class="panel-head"><div><h2>Trade with a friend</h2><p>Make an offer, send the code, and they send a reply code back. Cards you made travel inside the code, pictures and all.</p></div></div>
         <div class="friend">
           <div class="friend-make">
             <h3>1. Make an offer</h3>
@@ -317,11 +317,11 @@
 </dialog>
 
 <!-- Load order matters: your cards first, then the game -->
-<script src="cards.js?v=18"></script>
-<script src="game.js?v=18"></script>
-<script src="builder.js?v=18"></script>
-<script src="maker.js?v=18"></script>
-<script src="extras.js?v=18"></script>
-<script src="mart.js?v=18"></script>
+<script src="cards.js?v=19"></script>
+<script src="game.js?v=19"></script>
+<script src="builder.js?v=19"></script>
+<script src="maker.js?v=19"></script>
+<script src="extras.js?v=19"></script>
+<script src="mart.js?v=19"></script>
 </body>
 </html>

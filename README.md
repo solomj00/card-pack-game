@@ -7,8 +7,7 @@ Double-click `index.html`. It opens in your web browser, and you don't need to i
 | File | What it's for |
 |---|---|
 | `cards.js` | **Edit this one.** Set name, rarities and their odds, pack contents, types, and your list of cards. |
-| `images/` | Card pictures. The Dragon's Hoard art is here. |
-| `tools/make_art.py` | Draws the Dragon's Hoard art. |
+| `images/` | Pictures for cards you add to `cards.js`. |
 | `style.css` | Colours, fonts and layout. The **THEME** block at the bottom controls the colours. |
 | `game.js` | The game engine. You only need it to add new features. |
 | `builder.js` | The Build-a-pack workshop. |
@@ -17,10 +16,8 @@ Double-click `index.html`. It opens in your web browser, and you don't need to i
 | `extras.js` | Levels, quests, streaks, achievements, card shop and auto-open. |
 | `index.html` | The page itself. |
 
-## The built-in set: Dragon's Hoard
-The game ships with **Dragon's Hoard**, an original set of 27 cards, including Nullwyrm, the one Impossible card: six evolution lines (Fire, Water, Grass, Electric, Ghost and Rock), two Normal cards, and the legendary Elder Aurex. The rarest cards have full-picture versions.
-
-All of the art is original and is drawn by `tools/make_art.py`. To change the colours or add creatures, edit that file and run `python3 tools/make_art.py`. It rewrites the pictures in `images/`.
+## Cards
+The site starts with no built-in cards. Everyone makes their own on the **Make cards** tab. To give every visitor the same cards, add them to `CARDS` in `cards.js` (see "Add a card" below), and the **Also use the sample cards** switch will appear for them.
 
 ## Rarity tiers
 There are six rarities, from most to least common:
@@ -138,7 +135,7 @@ Packs cost coins. New players start with 500.
   3. They send you their reply code. You paste it and get your cards.
   - You can cancel a waiting offer at any time to get your cards back.
   - Each code works only once.
-  - Trades work with the cards in this set. Cards you made yourself stay in your browser and can't be traded.
+  - Cards you made can be traded. Their details and a smaller copy of the picture travel inside the code, so codes with made cards are longer.
 - The settings are at the top of `mart.js`.
 
 ## Colours and look
