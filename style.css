@@ -602,3 +602,22 @@ dialog.dlg::backdrop { background: rgba(5, 8, 15, .72); backdrop-filter: blur(3p
 .face.front .card.whole + .rbadge { top: auto; bottom: -12px; left: 50%; transform: translateX(-50%); }
 .hit-card .card.whole + .rbadge { top: auto; bottom: 6px; left: 6px; transform: none; }
 .slot:has(.card.whole) + .tag { margin-top: 18px; }
+
+/* =====================  Pick cards (pack builder)  ===================== */
+.pick-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.pick-tools input, .pick-tools select { flex: 1 1 140px; min-height: 44px; font: 500 16px var(--body-font); border-radius: 10px; border: 1px solid var(--line); background: #0f1626; color: var(--text); padding: 8px 12px; }
+.pick-tools input:focus-visible, .pick-tools select:focus-visible { outline: 2px solid var(--accent); }
+.pick-sum { font-weight: 500; font-size: 14px; color: var(--muted); }
+.pick-sum b { color: var(--text); }
+.pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; max-height: 380px; overflow: auto; padding: 8px 6px 6px; }
+.pk { position: relative; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 10px; opacity: .5; transition: opacity .15s, transform .15s; }
+.pk:hover { opacity: .8; }
+.pk[aria-pressed="true"] { opacity: 1; }
+.pk[aria-pressed="true"] .mini { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
+.pk:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+.pk .card { padding: 4px; border-radius: 8px; }
+.pk .top, .pk .bottom { font-size: 8px; } .pk .name { font-size: 10px; }
+.pk .pic { margin: 2px 0; border-width: 2px; }
+.pk-check { position: absolute; top: -6px; right: -6px; z-index: 4; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; display: none; place-items: center; font: 800 13px var(--body-font); }
+.pk[aria-pressed="true"] .pk-check { display: grid; }
+.ws-panel .row .link { min-height: 40px; }

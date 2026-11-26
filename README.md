@@ -70,7 +70,11 @@ Pictures are shrunk before saving, so a browser can hold well over 100 cards. Ca
 Players make their own packs on the **Build a pack** tab. They can choose:
 - **Wrapper:** the name, two colours, a pattern (stripes, dots, zigzag, burst or waves) and a finish (matte, glossy or holo foil).
 - **Cover art:** a surprise card, a card of their choice, an uploaded picture, or no art.
-- **Inside the pack:** 1 to 10 cards, a guaranteed hit (Rare, Holo or Ultra), luck (×2 or ×4 for Rare and better) and which card types it can contain.
+- **Inside the pack:** 1 to 10 cards, a guaranteed hit (Rare, Epic, Legendary or Exotic) and luck (×2 or ×4 for Rare and better).
+- **Which cards can come out:**
+  - **Every card**
+  - **By type**, for example only Fire and Water
+  - **Pick cards**, where you tap the exact cards you want. Search and the rarity filter help you find them, and **Select all shown** / **Clear shown** work on whatever the filters show.
 
 The workshop shows the live odds as you build. **Open it now** saves the pack and opens it straight away. Saved packs appear on the **Open packs** tab and can be edited or deleted from the workshop. They're stored in the player's browser.
 

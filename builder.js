@@ -17,12 +17,14 @@
   const FINISHES = [["matte", "Matte"], ["glossy", "Glossy"], ["holo", "Holo foil"]];
   const COVERS = [["auto", "Surprise"], ["card", "Pick a card"], ["upload", "Upload"], ["none", "No art"]];
   const LUCK = [[1, "Normal"], [2, "Lucky ×2"], [4, "Super lucky ×4"]];
+  const POOLS = [["all", "Every card"], ["types", "By type"], ["pick", "Pick cards"]];
 
   const fresh = () => ({
     id: null, name: "MY PACK", color: "#ff4f6d", color2: "#ffc929", pattern: "stripes", finish: "glossy",
     coverMode: "auto", coverCard: null, coverImg: "", count: 5,
-    guarantee: RARITY_KEYS[1] || "", luck: 1, types: [],
+    guarantee: RARITY_KEYS[1] || "", luck: 1, types: [], poolMode: "all", cards: [],
   });
+  let pickQ = "", pickR = "";
   let s = fresh();
 
   // ---------- Turn the form state into a pack ----------
@@ -33,14 +35,17 @@
     const bits = [`${n} card${n === 1 ? "" : "s"}`];
     if (st.guarantee) bits.push(`1 ${RARITIES[st.guarantee].label.toLowerCase()} or better`);
     if (st.luck > 1) bits.push(`${st.luck}× luck`);
-    if (st.types.length) bits.push(st.types.join(", "));
+    const picked = st.poolMode === "pick" ? st.cards.filter((id) => G.byId(id)) : [];
+    if (st.poolMode === "pick" && picked.length) bits.push(`${picked.length} picked card${picked.length === 1 ? "" : "s"}`);
+    if (st.poolMode === "types" && st.types.length) bits.push(st.types.join(", "));
     return {
       mine: true, id: st.id, name: (st.name || "MY PACK").trim().toUpperCase(),
       color: st.color, color2: st.color2, pattern: st.pattern, finish: st.finish,
       coverMode: st.coverMode,
       coverCard: st.coverMode === "card" ? st.coverCard : null,
       coverImg: st.coverMode === "upload" ? st.coverImg : "",
-      types: st.types.length ? st.types.slice() : undefined,
+      types: st.poolMode === "types" && st.types.length ? st.types.slice() : undefined,
+      cards: picked.length ? picked.map(String) : undefined,
       luck: st.luck, slots, about: bits.join(" · "),
     };
   }
@@ -49,17 +54,20 @@
     finish: p.finish || "matte", coverMode: p.coverMode || (p.coverImg ? "upload" : p.coverCard != null ? "card" : "auto"),
     coverCard: p.coverCard ?? null, coverImg: p.coverImg || "", count: p.slots.length,
     guarantee: (p.slots.find((x) => G.rank(x.min) >= 1) || {}).min || "", luck: p.luck || 1, types: p.types || [],
+    poolMode: p.cards && p.cards.length ? "pick" : p.types && p.types.length ? "types" : "all", cards: (p.cards || []).map(String),
   });
 
   // ---------- Odds: chance of at least one card of each rarity ----------
   function odds(pack) {
+    // Uses the cards this pack can really give, so missing rarities are counted correctly
+    const has = new Set(G.poolFor(pack).map((c) => G.rank(c.rarity)));
     return RARITY_KEYS.slice(1).map((k) => {
       const r = G.rank(k);
       let none = 1;
       for (const slot of pack.slots) {
         const opts = RARITY_KEYS.slice(Math.max(0, G.rank(slot.min)));
         const total = opts.reduce((t, x) => t + G.weightOf(x, pack.luck), 0);
-        const hit = opts.filter((x) => G.rank(x) >= r).reduce((t, x) => t + G.weightOf(x, pack.luck), 0);
+        const hit = opts.filter((x) => G.resolveRank(G.rank(x), slot.min, has) >= r).reduce((t, x) => t + G.weightOf(x, pack.luck), 0);
         none *= 1 - hit / total;
       }
       return [RARITIES[k], 1 - none];
@@ -87,6 +95,12 @@
     $("wsFinish").innerHTML = FINISHES.map(([v, l]) => chip("finish", v, l, s.finish === v)).join("");
     $("wsCoverMode").innerHTML = COVERS.map(([v, l]) => chip("coverMode", v, l, s.coverMode === v)).join("");
     $("wsLuck").innerHTML = LUCK.map(([v, l]) => chip("luck", v, l, s.luck === v)).join("");
+    $("wsPoolMode").innerHTML = POOLS.map(([v, l]) => chip("poolMode", v, l, s.poolMode === v)).join("");
+    $("wsTypesF").hidden = s.poolMode !== "types";
+    $("wsPickF").hidden = s.poolMode !== "pick";
+    $("wsPickR").innerHTML = `<option value="">All rarities</option>` + RARITY_KEYS.map((k) =>
+      `<option value="${k}"${pickR === k ? " selected" : ""}>${esc(RARITIES[k].label)}</option>`).join("");
+    paintPick();
     const CARDS = G.cards;
     const types = Object.keys(TYPES).filter((t) => CARDS.some((c) => c.type === t));
     $("wsTypes").innerHTML = types.map((t) =>
@@ -104,6 +118,31 @@
     paintPreview();
   }
 
+  // ---------- Pick cards ----------
+  const shownCards = () => G.cards.filter((c) =>
+    (!pickR || c.rarity === pickR) && (!pickQ || `${c.name} ${c.type}`.toLowerCase().includes(pickQ.toLowerCase())));
+  function paintPick() {
+    if (s.poolMode !== "pick") return;
+    const chosen = new Set(s.cards.map(String)), list = shownCards();
+    $("wsPick").innerHTML = list.length ? list.map((c) =>
+      `<button type="button" class="pk" data-pick="${esc(c.id)}" aria-pressed="${chosen.has(String(c.id))}" aria-label="${esc(c.name)}, ${esc(RARITIES[c.rarity].label)}">
+        <div class="mini">${G.cardHTML(c)}</div><span class="pk-check" aria-hidden="true">✓</span></button>`).join("")
+      : `<p class="muted">No cards match.</p>`;
+    paintPickSum();
+  }
+  function paintPickSum() {
+    const chosen = new Set(s.cards.map(String));
+    const picked = G.cards.filter((c) => chosen.has(String(c.id)));
+    const byR = RARITY_KEYS.map((k) => [RARITIES[k].label, picked.filter((c) => c.rarity === k).length]).filter(([, n]) => n);
+    $("wsPickSum").innerHTML = picked.length
+      ? `<b>${picked.length} card${picked.length === 1 ? "" : "s"} picked</b> · ${byR.map(([l, n]) => `${n} ${esc(l)}`).join(" · ")}`
+      : "Tap cards to put them in this pack.";
+  }
+  $("wsPickQ").addEventListener("input", (e) => { pickQ = e.target.value.trim(); paintPick(); });
+  $("wsPickR").addEventListener("change", (e) => { pickR = e.target.value; paintPick(); });
+  $("wsPickAll").onclick = () => { const ids = new Set(s.cards.map(String)); shownCards().forEach((c) => ids.add(String(c.id))); s.cards = [...ids]; paintPick(); paintPreview(); };
+  $("wsPickNone").onclick = () => { const out = new Set(shownCards().map((c) => String(c.id))); s.cards = s.cards.filter((id) => !out.has(String(id))); paintPick(); paintPreview(); };
+
   function paintMine() {
     const list = G.myPacks;
     $("wsMineWrap").hidden = !list.length;
@@ -118,7 +157,12 @@
   $("wsForm").addEventListener("click", (e) => {
     const b = e.target.closest("button");
     if (!b) return;
-    if (b.dataset.g) {
+    if (b.dataset.pick != null) {
+      const id = String(b.dataset.pick);
+      s.cards = s.cards.map(String).includes(id) ? s.cards.filter((x) => String(x) !== id) : s.cards.concat(id);
+      b.setAttribute("aria-pressed", s.cards.map(String).includes(id));
+      paintPickSum(); paintPreview(); say("");
+    } else if (b.dataset.g) {
       const v = b.dataset.g === "luck" ? +b.dataset.v : b.dataset.v;
       s[b.dataset.g] = v;
       if (b.dataset.g === "coverMode" && v === "card" && s.coverCard == null && G.cards[0]) s.coverCard = G.cards[0].id;
@@ -157,8 +201,10 @@
 
   $("wsNew").onclick = () => { s = fresh(); $("wsUploadT").textContent = "Choose a picture"; say(""); paintControls(); paintMine(); };
 
+  const pickedNone = () => s.poolMode === "pick" && !s.cards.some((id) => G.byId(id));
   $("wsSave").onclick = () => {
     if (s.coverMode === "upload" && !s.coverImg) { say("Choose a picture for the cover first, or pick another cover option."); return; }
+    if (pickedNone()) { say("Pick at least one card to go in this pack."); return; }
     if (!s.id) s.id = "p" + Date.now().toString(36);
     const pack = toPack(), list = G.myPacks.slice(), at = list.findIndex((p) => p.id === s.id);
     if (at >= 0) list[at] = pack; else list.push(pack);
@@ -178,6 +224,7 @@
 
   $("wsOpen").onclick = () => {
     if (s.coverMode === "upload" && !s.coverImg) { say("Choose a picture for the cover first, or pick another cover option."); return; }
+    if (pickedNone()) { say("Pick at least one card to go in this pack."); return; }
     const pack = toPack();
     if (!s.id) {                                   // opening also saves it, so you can open it again
       s.id = "p" + Date.now().toString(36); pack.id = s.id;

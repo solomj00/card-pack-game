@@ -172,26 +172,34 @@
   // Picks a rarity by weight (at least `min`), then a random card of that rarity
   // from the pack's pool. If the pool has no card of that rarity, it uses the
   // closest rarity it does have.
+  // Which cards a pack can give: the cards picked for it, or its types, or everything
   const poolFor = (pack) => {
-    const all = live(), p = pack.types ? all.filter((c) => pack.types.includes(c.type)) : all;
+    const all = live();
+    let p = all;
+    if (pack.cards && pack.cards.length) { const ids = new Set(pack.cards.map(String)); p = all.filter((c) => ids.has(String(c.id))); }
+    else if (pack.types) p = all.filter((c) => pack.types.includes(c.type));
     return p.length ? p : all;
   };
   // luck multiplies the weight of Rare and better (2 = twice as likely, and so on)
   const weightOf = (k, luck = 1) => RARITIES[k].weight * (rank(k) >= 1 ? luck : 1);
-  function pull(min, pool, luck = 1) {
+  // Step 1: roll a rarity for a slot (at least `min`)
+  function rollRarity(min, luck = 1) {
     const options = RARITY_KEYS.slice(Math.max(0, rank(min)));
     let roll = Math.random() * options.reduce((t, k) => t + weightOf(k, luck), 0);
-    let pick = options[0];
-    for (const k of options) { roll -= weightOf(k, luck); if (roll <= 0) { pick = k; break; } }
-    const target = rank(pick);
-    // If the pool has nothing at that rarity, use the closest one that still honours the
-    // slot's minimum (so a guaranteed Rare never turns into a Common), then anything else.
+    for (const k of options) { roll -= weightOf(k, luck); if (roll <= 0) return rank(k); }
+    return rank(options[0]);
+  }
+  // Step 2: if the pack has no card at that rarity, use the closest one it does have that still
+  // honours the slot's minimum (so a guaranteed Rare never turns into a Common), then anything else.
+  function resolveRank(target, min, has) {
     const lo = Math.max(0, rank(min)), cost = (i) => (i < lo ? 100 + (lo - i) : Math.abs(i - target) * 2 - (i > target ? 1 : 0));
-    const order = RARITY_KEYS.map((k, i) => i).sort((a, b) => cost(a) - cost(b));
-    for (const i of order) {
-      const options2 = pool.filter((c) => rank(c.rarity) === i);
-      if (options2.length) return options2[Math.floor(Math.random() * options2.length)];
-    }
+    return RARITY_KEYS.map((k, i) => i).filter((i) => has.has(i)).sort((a, b) => cost(a) - cost(b))[0];
+  }
+  function pull(min, pool, luck = 1) {
+    const has = new Set(pool.map((c) => rank(c.rarity)));
+    const r = resolveRank(rollRarity(min, luck), min, has);
+    const options = pool.filter((c) => rank(c.rarity) === r);
+    return options[Math.floor(Math.random() * options.length)];
   }
 
   // =================== 1. Pick a pack ===================
@@ -600,7 +608,7 @@
 
   // =================== Hooks used by builder.js ===================
   window.CardGame = {
-    RARITIES, RARITY_KEYS, TYPES, esc, rank, weightOf, poolFor, packFace, packAttrs, cardHTML, byId,
+    RARITIES, RARITY_KEYS, TYPES, esc, rank, weightOf, poolFor, resolveRank, packFace, packAttrs, cardHTML, byId,
     get cards() { return live(); },
     get myCards() { return myCards; },
     get useSamples() { return useSamples; },
