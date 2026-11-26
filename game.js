@@ -12,7 +12,15 @@
   // "Hits" are Epic and better (the third rarity onwards)
   const HIT_RANK = Math.min(2, RARITY_KEYS.length - 1);
   const rarityOf = (card) => RARITIES[norm(card.rarity)];
-  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  // Animation speed: "normal", "fast" or "instant" (skips the reveal)
+  let speed = "normal";
+  try { speed = localStorage.getItem((typeof SET !== "undefined" ? SET.saveKey : "") + "-speed") || "normal"; } catch (e) {}
+  document.documentElement.dataset.speed = speed;
+  const wait = (ms) => new Promise((r) => setTimeout(r, speed === "fast" ? ms * 0.35 : ms));
+  // A tiny event system so extras.js can react to what happens (quests, XP, achievements)
+  const listeners = {};
+  const on = (ev, fn) => (listeners[ev] = listeners[ev] || []).push(fn);
+  const emit = (ev, data) => (listeners[ev] || []).forEach((fn) => { try { fn(data); } catch (e) { console.error(e); } });
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // Ready-made packs from cards.js (can be an empty list). Very old cards.js files
@@ -242,6 +250,16 @@
     const mult = (CO.luckPrice || {})[pack.luck || 1] || 1;
     return Math.max(5, Math.round((base * mult) / 5) * 5);
   }
+  // Average coins you'd get back by selling everything in the pack
+  function packValue(pack) {
+    if (!CO) return 0;
+    const pool = poolFor(pack), has = new Set(pool.map((c) => rank(c.rarity)));
+    return pack.slots.reduce((t, slot) => {
+      const opts = RARITY_KEYS.slice(Math.max(0, rank(slot.min)));
+      const total = opts.reduce((a, k) => a + weightOf(k, pack.luck || 1), 0);
+      return t + opts.reduce((a, k) => a + (weightOf(k, pack.luck || 1) / total) * ((CO.sell || {})[RARITY_KEYS[resolveRank(rank(k), slot.min, has)]] || 0), 0);
+    }, 0);
+  }
   const boxPrice = (pack, n = 10) => (CO ? Math.round((priceOf(pack) * n * (CO.boxDiscount || 1)) / 5) * 5 : 0);
   const spinHours = () => (CO ? CO.spinEveryHours || CO.freeEveryHours || 4 : 4);
   const freeWait = () => (CO ? Math.max(0, (save.lastFree || 0) + spinHours() * 3600e3 - Date.now()) : 0);
@@ -349,6 +367,7 @@
     setTimeout(() => {
       wheelRot = target; spinning = false;
       earn(win.coins);
+      emit("spin", { coins: win.coins, jackpot: win.coins === Math.max(...sl.map((s) => s.coins)) });
       const top = Math.max(...sl.map((s) => s.coins)), big = win.coins >= top / 10;
       $("wheelMsg").innerHTML = win.coins === top ? `<b class="jackpot">JACKPOT! +${fmt(win.coins)} coins!</b>` : `You won <b>+${fmt(win.coins)}</b> coins!`;
       if (big) { sfx.hype(win.coins === top ? 3 : 2); confetti(win.coins === top ? 260 : 120, ["#ffcf33", "#fff3c4", "#ff2e7e", "#7af6ff"]); }
@@ -365,18 +384,21 @@
     save.owned[c.id]--;
     if (!save.owned[c.id]) delete save.owned[c.id];
     earn(sellValue(c));
+    emit("sell", { n: 1, coins: sellValue(c) });
     return sellValue(c);
   }
   function sellDupes() {
     const total = dupeValue(), n = dupes().reduce((t, c) => t + save.owned[c.id] - 1, 0);
     if (!total) return;
     dupes().forEach((c) => { save.owned[c.id] = 1; });
-    earn(total); renderBinder();
+    earn(total); emit("sell", { n, coins: total }); renderBinder();
     toast(`Sold ${n} duplicate card${n === 1 ? "" : "s"} for ${fmt(total)} coins.`);
   }
   let toastTimer = null;
   function toast(html, ms = 3500) {
     const t = $("toast");
+    const open = document.querySelector("dialog[open]");   // show above any open pop-up
+    if (open && t.parentElement !== open) open.append(t); else if (!open && t.parentElement !== document.body) document.body.append(t);
     t.innerHTML = html; t.hidden = false; t.classList.remove("show"); void t.offsetWidth; t.classList.add("show");
     clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.remove("show"); setTimeout(() => (t.hidden = true), 300); }, ms);
   }
@@ -392,7 +414,7 @@
     return `<div class="pick">
       <button class="pack" data-pack="${i}" ${packAttrs(pack)} aria-label="Open a ${esc(pack.name)} pack">${packFace(pack, i)}</button>
       <p class="about">${pack.showName === false ? `<b class="pack-name">${esc(pack.name)}</b><br>` : ""}${pack.mine ? '<span class="yours">Yours</span> ' : ""}${esc(pack.about || "")}</p>
-      ${CO ? `<p class="pack-price">${coinTag(priceOf(pack))} a pack</p>` : ""}
+      ${CO ? `<p class="pack-price">${coinTag(priceOf(pack))} a pack <span class="ev">· avg. value back ${fmt(packValue(pack))}</span></p>` : ""}
       <button type="button" class="mini-btn" data-box="${i}">Open a box of 10${CO ? " · " + coinTag(boxPrice(pack)) : ""}</button></div>`;
   }
 
@@ -415,6 +437,7 @@
     $("stage").innerHTML = `<div class="picker">
       <p class="hint">${allPacks().length > 1 ? "Choose a pack" : "Tap the pack to open it"}</p>
       <div class="packs">${allPacks().map(packHTML).join("")}</div>
+      ${pityOn() ? `<p class="pity">Bad-luck protection: ${esc(RARITIES[norm(PITY.rarity)].label)} or better guaranteed within <b>${pityLeft()}</b> pack${pityLeft() === 1 ? "" : "s"}</p>` : ""}
       <p class="hint small"><a href="#build">Build another pack →</a></p></div>`;
     document.querySelectorAll("#stage .pack").forEach((el) => { el.onclick = () => choose(el); });
     document.querySelectorAll("#stage [data-box]").forEach((b) => { b.onclick = () => openBox(allPacks()[+b.dataset.box]); });
@@ -452,9 +475,17 @@
 
   // Roll the cards for one pack and save them (so leaving mid-reveal never loses a pull).
   // Cards come back sorted so the rarest one is revealed last.
+  const pityOn = () => typeof PITY !== "undefined" && PITY.packs > 0 && RARITIES[norm(PITY.rarity)];
+  const pityLeft = () => (pityOn() ? Math.max(1, PITY.packs - (save.dry || 0)) : 0);
   function rollPack(packDef) {
     const pool = poolFor(packDef);
-    const pulls = packDef.slots.map((slot) => pull(slot.min, pool, packDef.luck || 1)).filter(Boolean)
+    let slots = packDef.slots;
+    const pityRank = pityOn() ? rank(PITY.rarity) : 99;
+    const pityNow = pityOn() && (save.dry || 0) >= PITY.packs - 1 && pool.some((c) => rank(c.rarity) >= pityRank);
+    if (pityNow) {   // bad-luck protection: the last slot is upgraded
+      slots = slots.map((s, i) => (i === slots.length - 1 && rank(s.min) < pityRank ? { min: norm(PITY.rarity) } : s));
+    }
+    const pulls = slots.map((slot) => pull(slot.min, pool, packDef.luck || 1)).filter(Boolean)
       .sort((a, b) => rank(a.rarity) - rank(b.rarity));
     const seen = {};
     const isNew = pulls.map((c) => { const n = !save.owned[c.id] && !seen[c.id]; seen[c.id] = 1; return n; });
@@ -466,6 +497,8 @@
       if (rank(c.rarity) >= HIT_RANK) save.hits.unshift({ id: c.id, pack: packDef.name, t: Date.now() });
     });
     save.hits.length = Math.min(save.hits.length, 60);
+    if (pityOn()) save.dry = pulls.some((c) => rank(c.rarity) >= pityRank) ? 0 : (save.dry || 0) + 1;
+    emit("pack", { pulls, isNew, pack: packDef, pity: pityNow });
     return { pulls, isNew };
   }
 
@@ -474,6 +507,11 @@
     lastPack = packDef;
     const { pulls, isNew } = rollPack(packDef);
     store();
+    if (speed === "instant") {
+      const best = pulls.reduce((b, c) => (rank(c.rarity) > rank(b.rarity) ? c : b), pulls[0]);
+      sfx.tear(); showSummary(pulls, isNew, false); celebrate(rarityOf(best));
+      return;
+    }
     await wait(calm ? 0 : 150);
     sfx.shake(); pack.classList.add("shake"); await wait(calm ? 0 : 450);
     pack.classList.remove("shake"); sfx.tear(); pack.classList.add("torn"); await wait(calm ? 0 : 550);
@@ -597,7 +635,7 @@
       <div class="spread">${pulls.map((c, i) => {
         const r = rarityOf(c), best = rank(c.rarity) === bestRank && (r.hype || 0) > 0;
         return `<div>
-          <div class="slot${animate ? "" : " open"}${r.shine ? " shine" : ""}${best ? " best" : ""}" style="--glow:${esc(r.glow || "#fff")}">
+          <div data-id="${esc(c.id)}" class="slot${animate ? "" : " open"}${r.shine ? " shine" : ""}${best ? " best" : ""}" style="--glow:${esc(r.glow || "#fff")}">
             <div class="flip"><div class="face back"></div><div class="face front">${cardHTML(c)}${badge(r)}</div></div>
           </div>
           <div class="tag"${animate ? "" : ' style="opacity:1"'}>${isNew[i] ? '<span class="newtag">New!</span>' : "&nbsp;"}
@@ -606,6 +644,7 @@
       <div class="actions" id="resultActions"${animate ? " hidden" : ""}>
         ${lastPack ? `<button class="btn" id="again">Open another ${esc(lastPack.name)}${CO ? " · " + coinTag(priceOf(lastPack)) : ""}</button>` : ""}
         <button class="btn alt" id="choose">Choose a different pack</button>
+        <button class="btn alt" id="copyPull">Copy pull</button>
         ${CO ? `<button class="btn alt" id="sellAll">Sell all ${coinTag(pulls.reduce((t, c) => t + sellValue(c), 0))}</button>` : ""}</div></div>`;
     const slots = [...document.querySelectorAll("#stage .slot")];
     slots.forEach((slot) => {
@@ -636,6 +675,13 @@
     const again = $("again");
     if (again) { again.onclick = () => window.CardGame.openNow(lastPack); again.focus({ preventScroll: true }); }
     $("choose").onclick = showPack;
+    $("copyPull").onclick = async () => {
+      const best = [...pulls].sort((a, b) => rank(b.rarity) - rank(a.rarity));
+      const text = `I opened a ${lastPack ? lastPack.name : ""} pack in ${SET.name} and pulled:\n`
+        + best.map((c) => `${rarityOf(c).symbol} ${c.name} (${rarityOf(c).label})`).join("\n") + `\n${location.href.split("#")[0]}`;
+      try { await navigator.clipboard.writeText(text); toast("Pull copied! Paste it anywhere to share."); }
+      catch (e) { toast("Couldn't copy here. Your browser blocked it."); }
+    };
     if (CO) {
       const sold = new Set();
       const sellAt = (i) => {
@@ -672,6 +718,7 @@
       pulls.forEach((c, j) => { all.push(c); if (isNew[j]) fresh.add(c.id); });
     }
     store(); renderBinder();
+    emit("box", { n, cards: all });
     const counts = RARITY_KEYS.map((k) => [RARITIES[k], all.filter((c) => c.rarity === k).length]);
     const hits = all.filter((c) => rank(c.rarity) >= HIT_RANK).sort((a, b) => rank(b.rarity) - rank(a.rarity));
     const top = hits[0] ? rarityOf(hits[0]) : null;
@@ -698,7 +745,7 @@
   // =================== Card hits & stats ===================
   const hitHTML = (c, note = "") => {
     const r = rarityOf(c);
-    return `<div class="hit${r.shine ? " shine" : ""}"><div class="hit-card">${cardHTML(c)}${badge(r)}</div>
+    return `<div class="hit${r.shine ? " shine" : ""}" data-id="${esc(c.id)}"><div class="hit-card">${cardHTML(c)}${badge(r)}</div>
       ${note ? `<small>${esc(note)}</small>` : ""}</div>`;
   };
   function renderHits() {
@@ -746,7 +793,8 @@
     $("sFound").textContent = found;
     $("sFoundOf").textContent = " / " + CARDS.length;
     $("sTotal").textContent = CARDS.length;
-    $("binderSub").textContent = `${found} of ${CARDS.length} cards found · ${save.packs} pack${save.packs === 1 ? "" : "s"} opened`;
+    $("binderSub").textContent = `${found} of ${CARDS.length} cards found · ${save.packs} pack${save.packs === 1 ? "" : "s"} opened`
+      + (CO ? ` · collection worth ${fmt(CARDS.reduce((t, c) => t + (save.owned[c.id] || 0) * sellValue(c), 0))} coins` : "");
     $("sBest").textContent = save.best < 0 ? "—" : RARITIES[RARITY_KEYS[save.best]].label;
 
     const types = [...new Set(CARDS.map((c) => c.type))];
@@ -756,7 +804,7 @@
     const list = CARDS.filter((c) => filter === "All" || (filter === "Owned" ? save.owned[c.id] : c.type === filter));
     $("grid").innerHTML = list.map((c) => {
       const n = save.owned[c.id] || 0;
-      return `<div class="mini${n ? "" : " missing"}${rarityOf(c).shine ? " shine" : ""}">
+      return `<div class="mini${n ? "" : " missing"}${rarityOf(c).shine ? " shine" : ""}"${n ? ` data-id="${esc(c.id)}" tabindex="0" role="button" aria-label="Look at ${esc(c.name)}"` : ""}>
         ${n > 1 ? `<span class="count">×${n}</span>` : ""}${cardHTML(c, !n)}</div>`;
     }).join("") || "<p>No cards here yet.</p>";
     const sb = $("sellDupes");
@@ -817,6 +865,54 @@
     spaceAction();
   });
 
+  // =================== Card inspector (tap a card to see it big) ===================
+  const buyPrice = (c) => (CO ? Math.max(5, sellValue(c) * ((typeof PROGRESS !== "undefined" && PROGRESS.buyMultiplier) || 6)) : 0);
+  function inspect(id) {
+    const c = byId(id); if (!c) return;
+    const r = rarityOf(c), n = save.owned[c.id] || 0;
+    $("inspectBody").innerHTML = `<div class="insp-stage"><div class="insp-card${r.shine ? " shine" : ""}" id="inspCard">${cardHTML(c)}</div></div>
+      <div class="insp-info"><h2>${esc(c.name)}</h2>
+        <p><span class="rar-chip" style="--glow:${esc(r.glow || "#8e9ab0")}"><i></i>${esc(r.label)}</span> <span class="muted">${esc(c.type)}${c.custom ? " · made by you" : ""}</span></p>
+        <dl><div><dt>You own</dt><dd>${n}</dd></div>${CO ? `<div><dt>Sells for</dt><dd>${coinTag(sellValue(c))}</dd></div><div><dt>Shop price</dt><dd>${coinTag(buyPrice(c))}</dd></div>` : ""}</dl>
+        <div class="actions">${CO && n ? `<button class="btn alt" id="inspSell">Sell one</button>` : ""}<button class="btn alt" data-close>Close</button></div></div>`;
+    const d = $("inspectDlg"); if (!d.open) d.showModal();
+    const card = $("inspCard"), stage = card.parentElement;
+    stage.onpointermove = (e) => {
+      const b = stage.getBoundingClientRect(), x = (e.clientX - b.left) / b.width - .5, y = (e.clientY - b.top) / b.height - .5;
+      card.style.transform = `rotateY(${x * 24}deg) rotateX(${-y * 18}deg)`;
+      card.style.setProperty("--hx", (x + .5) * 100 + "%"); card.style.setProperty("--hy", (y + .5) * 100 + "%");
+    };
+    stage.onpointerleave = () => { card.style.transform = ""; };
+    const s = $("inspSell");
+    if (s) s.onclick = () => { sellOne(c); renderBinder(); inspect(c.id); };
+  }
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("button, a, dialog")) return;
+    const el = e.target.closest("#grid [data-id], #hits [data-id], .hit-grid [data-id], #stage .slot.open[data-id]");
+    if (el) inspect(el.dataset.id);
+  });
+  document.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches("#grid [data-id]")) { e.preventDefault(); inspect(e.target.dataset.id); }
+  });
+  function buyCard(c) {
+    if (!c || !spend(buyPrice(c))) return false;
+    const isNew = !save.owned[c.id];
+    save.owned[c.id] = (save.owned[c.id] || 0) + 1;
+    save.best = Math.max(save.best, rank(c.rarity));
+    store(); renderBinder();
+    emit("buy", { card: c, isNew });
+    toast(`Bought ${esc(c.name)}${isNew ? " · New!" : ""}`);
+    return true;
+  }
+  // Speed buttons
+  const paintSpeed = () => document.querySelectorAll("[data-speed]").forEach((b) => b.setAttribute("aria-checked", b.dataset.speed === speed));
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-speed]"); if (!b) return;
+    speed = b.dataset.speed; document.documentElement.dataset.speed = speed; paintSpeed();
+    try { localStorage.setItem(SET.saveKey + "-speed", speed); } catch (e2) {}
+  });
+  paintSpeed();
+
   // =================== Hooks used by builder.js ===================
   window.CardGame = {
     RARITIES, RARITY_KEYS, TYPES, esc, rank, weightOf, poolFor, resolveRank, packFace, packAttrs, cardHTML, byId,
@@ -849,6 +945,8 @@
       return true;
     },
     priceOf, boxPrice, get coinsOn() { return !!CO; },
+    on, emit, rollPack, spend, earn, store, toast, fmt, coinTag, sellValue, buyPrice, buyCard, inspect, packValue, celebrate, renderBinder,
+    rarityOf, get save() { return save; }, get allPacks() { return allPacks(); }, get lastPack() { return lastPack; }, set lastPack(p) { lastPack = p; },
   };
 
   renderBinder();

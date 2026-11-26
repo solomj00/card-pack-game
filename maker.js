@@ -149,6 +149,7 @@
       list.push(...made);
     }
     if (!G.saveMyCards(list)) { say("Your browser's storage is full. Delete some cards and try again."); return; }
+    G.emit("makeCard", { n: made.length });
     const editing = !!s.id;
     const keep = { type: s.type, rarity: s.rarity, hp: s.hp, move: s.move, damage: s.damage, art: s.art };
     reset(); Object.assign(s, editing ? {} : keep);          // keep settings handy for the next card

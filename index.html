@@ -6,7 +6,7 @@
   <title>Card Opening Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 <canvas id="confetti" aria-hidden="true"></canvas>
@@ -19,9 +19,14 @@
       <a href="#" id="tabPlay" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l-1 4H7zM7 7h10v14H7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Open packs</span></a>
       <a href="#make" id="tabMake" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Make cards</span></a>
       <a href="#build" id="tabBuild" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Build a pack</span></a>
+      <a href="#shop" id="tabShop" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.5 12h-13zM8 8V6a4 4 0 018 0v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Card shop</span></a>
+      <a href="#rewards" id="tabRewards" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Rewards</span><em class="tab-badge" id="rewardBadge" hidden></em></a>
       <a href="#collection" id="tabCollection" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 5v16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Collection</span></a>
     </nav>
     <div class="side-foot">
+      <a class="level" id="levelBox" href="#rewards" aria-label="Your level">
+        <span class="lv" id="lvNum">Lv 1</span><span class="lvbar"><i id="lvBar"></i></span><small id="lvText">0 / 100 XP</small>
+      </a>
       <div class="wallet" id="wallet" hidden>
         <div class="bal"><i class="coin coin-lg" aria-hidden="true"></i><b id="coinBal" aria-live="polite">0</b><span>coins</span></div>
         <button class="side-btn free" id="freeCoins">Free coins</button>
@@ -55,6 +60,12 @@
           <button type="button" role="radio" data-mode="stack" id="modeStack">One by one</button>
           <button type="button" role="radio" data-mode="grid" id="modeGrid">All at once</button>
         </div>
+        <div class="seg" role="radiogroup" aria-label="Speed">
+          <button type="button" role="radio" data-speed="normal">Normal</button>
+          <button type="button" role="radio" data-speed="fast">Fast</button>
+          <button type="button" role="radio" data-speed="instant">Instant</button>
+        </div>
+        <button type="button" class="btn alt" id="autoBtn">Auto-open</button>
         <button type="button" class="btn alt" id="statsBtn">View stats</button>
         <p class="kbd-hint">Press <kbd>Space</kbd> to open packs quickly</p>
       </div>
@@ -188,6 +199,28 @@
     </section>
 
 
+    <!-- Card shop -->
+    <section class="panel" id="shopView" hidden>
+      <div class="binder-head">
+        <div><h2>Card shop</h2><p class="muted">Buy the exact card you're missing. Prices are a multiple of what a card sells for.</p></div>
+        <div class="filters" id="shopFilters"></div>
+      </div>
+      <div class="pick-tools shop-tools"><input type="search" id="shopQ" placeholder="Search cards" aria-label="Search the shop"></div>
+      <div class="grid shop-grid" id="shopGrid"></div>
+    </section>
+
+    <!-- Rewards: level, streak, quests, achievements -->
+    <section id="rewardsView" class="rewards" hidden>
+      <div class="rw-top">
+        <div class="panel rw-level" id="rwLevel"></div>
+        <div class="panel rw-streak" id="rwStreak"></div>
+      </div>
+      <section class="panel"><div class="panel-head"><div><h2>Daily quests</h2><p>New quests every day at midnight.</p></div><span class="hit-count" id="questReset"></span></div>
+        <div class="quests" id="quests"></div></section>
+      <section class="panel"><div class="panel-head"><div><h2>Achievements</h2><p id="achSub"></p></div></div>
+        <div class="achs" id="achs"></div></section>
+    </section>
+
     <!-- Collection -->
     <section class="panel binder" id="binder" hidden>
       <div class="binder-head">
@@ -214,6 +247,18 @@
   <div class="actions"><button type="button" class="btn" id="spinBtn">Spin the wheel</button></div>
 </dialog>
 
+<!-- Card inspector -->
+<dialog class="dlg wide insp-dlg" id="inspectDlg" aria-label="Card">
+  <div class="dlg-head"><span></span><button class="x" type="button" data-close aria-label="Close">×</button></div>
+  <div id="inspectBody" class="insp"></div>
+</dialog>
+
+<!-- Auto-open -->
+<dialog class="dlg wide" id="autoDlg" aria-labelledby="autoTitle">
+  <div class="dlg-head"><h2 id="autoTitle">Auto-open</h2><button class="x" type="button" data-close aria-label="Close">×</button></div>
+  <div id="autoBody"></div>
+</dialog>
+
 <!-- Stats -->
 <dialog class="dlg" id="statsDlg" aria-labelledby="statsTitle">
   <div class="dlg-head"><h2 id="statsTitle">Pack opening stats</h2><button class="x" type="button" data-close aria-label="Close">×</button></div>
@@ -227,9 +272,10 @@
 </dialog>
 
 <!-- Load order matters: your cards first, then the game -->
-<script src="cards.js?v=14"></script>
-<script src="game.js?v=14"></script>
-<script src="builder.js?v=14"></script>
-<script src="maker.js?v=14"></script>
+<script src="cards.js?v=15"></script>
+<script src="game.js?v=15"></script>
+<script src="builder.js?v=15"></script>
+<script src="maker.js?v=15"></script>
+<script src="extras.js?v=15"></script>
 </body>
 </html>

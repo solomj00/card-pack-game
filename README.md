@@ -13,6 +13,7 @@ Double-click `index.html`. It opens in your web browser, and you don't need to i
 | `game.js` | The game engine. You only need it to add new features. |
 | `builder.js` | The Build-a-pack workshop. |
 | `maker.js` | The Make-cards tab. |
+| `extras.js` | Levels, quests, streaks, achievements, card shop and auto-open. |
 | `index.html` | The page itself. |
 
 ## The built-in set: Dragon's Hoard
@@ -109,6 +110,22 @@ Packs cost coins. New players start with 500.
 - **Not enough coins?** The game tells you how many more you need and offers a wheel spin or selling duplicates, whichever is available.
 - **Settings:** edit `COINS` at the bottom of `cards.js` to change the starting coins, wheel prizes and chances, spin timer, prices, box discount and sell values. Set `enabled: false` to make every pack free. A ready-made pack can set its own `price`.
 - **Starting over:** **Reset collection** also resets your coins to the starting amount.
+
+## Progress and extras
+- **Speed:** **Normal**, **Fast** or **Instant**. Instant skips the reveal and goes straight to the results.
+- **Auto-open:** keeps opening a pack for you. Choose 10, 25, 50, 100 or until you stop. It can also stop as soon as you pull a chosen rarity, and it shows a running tally of cards, new finds, hits and coins.
+- **Bad-luck protection:** after 10 packs in a row without an Epic or better, the next pack is guaranteed one. The pack picker shows how close you are. Change this in `PITY` in `cards.js`.
+- **Pack value:** each pack shows its average value back, meaning what its cards sell for on average.
+- **Collection value:** the Collection tab shows what your whole collection is worth.
+- **Card inspector:** tap any card in your results, hits or collection to see it big, with a 3D tilt and shine, its value and a **Sell one** button.
+- **Copy pull:** copies a summary of your pack to paste to friends.
+- **Card shop:** buy any card you're missing. It costs 6 times its sell value.
+- **Rewards tab:**
+  - **Level and XP:** every pack gives XP, and rarer cards give more. Each level-up pays coins.
+  - **Daily streak:** claim a bonus each day you visit. It grows up to 7 days.
+  - **Daily quests:** 3 new quests every day, with coin rewards.
+  - **Achievements:** 19 of them, each with a coin bounty.
+- **Settings:** XP, levels and shop prices live in `PROGRESS` in `cards.js`.
 
 ## Colours and look
 The theme colours are at the bottom of `style.css`, under **THEME**. Change `--accent` to recolour every button and highlight.

@@ -129,6 +129,22 @@ const COINS = {
   guaranteeExtra: { rare: 5, epic: 25, legendary: 100, exotic: 300 },  // added for a guaranteed slot
   luckPrice: { 2: 1.4, 4: 2 },     // price multiplier for Lucky ×2 / ×4
   boxDiscount: 0.9,       // a box of 10 costs 90% of 10 packs
-  sell: { common: 2, rare: 8, epic: 30, legendary: 120, exotic: 400 },  // coins per duplicate sold
+  sell: { common: 1, rare: 3, epic: 12, legendary: 50, exotic: 200 },   // coins per card sold (a pack gives back about 2/3 of its price on average)
 };
 // A ready-made pack in PACKS can set its own price, e.g. price: 100
+
+// ---- 7. Bad-luck protection ---------------------------------------------
+// If this many packs in a row have no card of `rarity` or better, the next
+// pack is guaranteed one. Set packs to 0 to turn it off.
+const PITY = { packs: 10, rarity: "epic" };
+
+// ---- 8. Progress ---------------------------------------------------------
+// XP for each card pulled (by rarity) and for each pack opened.
+// Levelling up pays out levelReward × the new level in coins.
+const PROGRESS = {
+  xp: { common: 1, rare: 3, epic: 10, legendary: 40, exotic: 150 },
+  xpPerPack: 5,
+  xpPerLevel: 100,        // level 2 needs 100 XP, level 3 another 200, and so on
+  levelReward: 100,
+  buyMultiplier: 6,       // the card shop sells a card for 6× what it sells back for
+};

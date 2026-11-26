@@ -248,6 +248,7 @@
     const pack = toPack(), list = G.myPacks.slice(), at = list.findIndex((p) => p.id === s.id);
     if (at >= 0) list[at] = pack; else list.push(pack);
     if (!G.saveMyPacks(list)) { say("Your browser's storage is full. Delete a pack or use a smaller cover picture."); return; }
+    G.emit("buildPack", pack);
     say(`Saved! <a href="#">Go open it →</a>`);
     paintControls(); paintMine();
   };
@@ -298,19 +299,22 @@
   function go(view, render = true) {
     const play = view === "play";
     $("workshop").hidden = view !== "build";
+    $("shopView").hidden = view !== "shop";
+    $("rewardsView").hidden = view !== "rewards";
     $("maker").hidden = view !== "make";
     $("playView").hidden = !play;
     $("binder").hidden = view !== "collection";
     document.body.dataset.view = view;
-    [["tabPlay", "play"], ["tabMake", "make"], ["tabBuild", "build"], ["tabCollection", "collection"]]
+    [["tabPlay", "play"], ["tabMake", "make"], ["tabBuild", "build"], ["tabShop", "shop"], ["tabRewards", "rewards"], ["tabCollection", "collection"]]
       .forEach(([id, v]) => $(id).setAttribute("aria-current", v === view ? "page" : "false"));
     if (view === "build") { paintControls(); paintMine(); }
     if (view === "make" && window.CardMaker) window.CardMaker.paint();
+    if ((view === "shop" || view === "rewards") && window.CardExtras) window.CardExtras.paint(view);
     if (play && render && !document.querySelector("#stage .chosen, #stage .table, #stage .results")) G.showPicker();
     if (play && location.hash) history.replaceState(null, "", location.pathname + location.search);
   }
   G.go = go;
-  const route = () => go({ "#build": "build", "#make": "make", "#collection": "collection" }[location.hash] || "play");
+  const route = () => go({ "#build": "build", "#make": "make", "#collection": "collection", "#shop": "shop", "#rewards": "rewards" }[location.hash] || "play");
   addEventListener("hashchange", route);
   $("tabPlay").onclick = (e) => { e.preventDefault(); go("play"); G.showPicker(); };
   document.querySelector(".logo").onclick = (e) => { e.preventDefault(); go("play"); G.showPicker(); };
