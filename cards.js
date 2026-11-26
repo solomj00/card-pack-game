@@ -17,15 +17,17 @@ const SET = {
 // weight:  how often it shows up. Bigger number = more common.
 // shine:   true gives the card a rainbow foil effect.
 // glow:    colour the card glows before it flips ("" = no build-up).
-// hype:    0 = quiet, 1 = glow + chime, 2 = light rays + confetti, 3 = the works.
+// hype:    0 = quiet, 1 = glow + chime, 2 = light rays + confetti, 3 = the works,
+//          4 = Impossible: long build-up, double flash, huge confetti.
 // fullArt: true = the picture fills the whole card (a card can override this).
-// frame:   special border for the full-picture cards: "rainbow" or "gold".
+// frame:   special border for the full-picture cards: "rainbow", "gold" or "cosmic" (animated).
 const RARITIES = {
   common:    { label: "Common",    weight: 70,  symbol: "●", shine: false, glow: "",        hype: 0 },
   rare:      { label: "Rare",      weight: 22,  symbol: "★", shine: false, glow: "#4da3ff", hype: 1 },
   epic:      { label: "Epic",      weight: 6,   symbol: "✦", shine: true,  glow: "#b35cff", hype: 2 },
   legendary: { label: "Legendary", weight: 1.6, symbol: "♛", shine: true,  glow: "#ffb020", hype: 3, fullArt: true, frame: "gold" },
   exotic:    { label: "Exotic",    weight: 0.4, symbol: "✺", shine: true,  glow: "#ff4fd8", hype: 3, fullArt: true, frame: "rainbow" },
+  impossible:{ label: "Impossible", weight: 0.02, symbol: "∞", shine: true, glow: "#7af6ff", hype: 4, fullArt: true, frame: "cosmic" },
 };
 
 // Old rarity names and the new rarity they become. Cards and packs saved with
@@ -108,6 +110,8 @@ const CARDS = [
   { name: "Elder Aurex", type: "Dragon",   rarity: "legendary",    hp: 220, move: "Aurora Breath", damage: 180, image: "images/aurex.svg", art: "framed" },
   { name: "Elder Aurex", type: "Dragon",   rarity: "exotic",       hp: 230, move: "Northern Sky",  damage: 220, image: "images/aurex-sir.svg" },
   { name: "Elder Aurex", type: "Dragon",   rarity: "exotic",       hp: 250, move: "Hoard of Ages", damage: 250, image: "images/aurex-gold.svg", frame: "gold" },
+  // The impossible one (about 1 in 5,000 cards)
+  { name: "Nullwyrm",    type: "Dragon",   rarity: "impossible",   hp: 999, move: "Erase Reality", damage: 999, image: "images/nullwyrm-impossible.svg" },
 ];
 
 // ---- 6. Coins ----------------------------------------------------------
@@ -126,10 +130,10 @@ const COINS = {
     { coins: 25000, chance: 2 },   { coins: 1000, chance: 10 }, { coins: 2500, chance: 11 },
   ],
   perCard: 6,             // pack price per card
-  guaranteeExtra: { rare: 5, epic: 25, legendary: 100, exotic: 300 },  // added for a guaranteed slot
+  guaranteeExtra: { rare: 5, epic: 25, legendary: 100, exotic: 300, impossible: 5000 },  // added for a guaranteed slot
   luckPrice: { 2: 1.4, 4: 2 },     // price multiplier for Lucky ×2 / ×4
   boxDiscount: 0.9,       // a box of 10 costs 90% of 10 packs
-  sell: { common: 1, rare: 3, epic: 12, legendary: 50, exotic: 200 },   // coins per card sold (a pack gives back about 2/3 of its price on average)
+  sell: { common: 1, rare: 3, epic: 12, legendary: 50, exotic: 200, impossible: 5000 },   // coins per card sold (a pack gives back about 2/3 of its price on average)
 };
 // A ready-made pack in PACKS can set its own price, e.g. price: 100
 
@@ -142,7 +146,7 @@ const PITY = { packs: 10, rarity: "epic" };
 // XP for each card pulled (by rarity) and for each pack opened.
 // Levelling up pays out levelReward × the new level in coins.
 const PROGRESS = {
-  xp: { common: 1, rare: 3, epic: 10, legendary: 40, exotic: 150 },
+  xp: { common: 1, rare: 3, epic: 10, legendary: 40, exotic: 150, impossible: 2500 },
   xpPerPack: 5,
   xpPerLevel: 100,        // level 2 needs 100 XP, level 3 another 200, and so on
   levelReward: 100,

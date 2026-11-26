@@ -17,12 +17,12 @@ Double-click `index.html`. It opens in your web browser, and you don't need to i
 | `index.html` | The page itself. |
 
 ## The built-in set: Dragon's Hoard
-The game ships with **Dragon's Hoard**, an original set of 26 cards: six evolution lines (Fire, Water, Grass, Electric, Ghost and Rock), two Normal cards, and the legendary Elder Aurex. The rarest cards have full-picture versions.
+The game ships with **Dragon's Hoard**, an original set of 27 cards, including Nullwyrm, the one Impossible card: six evolution lines (Fire, Water, Grass, Electric, Ghost and Rock), two Normal cards, and the legendary Elder Aurex. The rarest cards have full-picture versions.
 
 All of the art is original and is drawn by `tools/make_art.py`. To change the colours or add creatures, edit that file and run `python3 tools/make_art.py`. It rewrites the pictures in `images/`.
 
 ## Rarity tiers
-There are five rarities, from most to least common:
+There are six rarities, from most to least common:
 
 | Rarity | Odds per card | What happens |
 |---|---|---|
@@ -30,7 +30,8 @@ There are five rarities, from most to least common:
 | Rare | 22 in 100 | Blue glow and a chime |
 | Epic | 6 in 100 | Purple glow, foil shine, light rays and confetti |
 | Legendary | about 1.6 in 100 | Gold frame, full-picture card, shake, flash and big confetti |
-| Exotic | about 0.4 in 100 | Rainbow frame, full-picture card and the biggest celebration |
+| Exotic | about 0.4 in 100 | Rainbow frame, full-picture card and a huge celebration |
+| Impossible | about 1 in 5,000 | Animated cosmic frame, a long build-up, a double flash, a screen shake and massive confetti |
 
 - **Card hits** collects every Epic or better pull.
 - **Luck** in the pack builder multiplies the odds of Rare and better.

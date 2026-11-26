@@ -125,6 +125,7 @@
     { id: "epic",    name: "Ooh, shiny",       desc: "Pull an Epic or better",            reward: 100,  test: (s) => s.best >= 2 },
     { id: "legend",  name: "Legendary luck",   desc: "Pull a Legendary or better",        reward: 300,  test: (s) => s.best >= 3 },
     { id: "exotic",  name: "Out of this world", desc: "Pull an Exotic",                   reward: 1000, test: (s) => s.best >= 4 },
+    { id: "impossible", name: "The impossible", desc: "Pull an Impossible card",         reward: 25000, test: (s) => s.best >= 5 },
     { id: "half",    name: "Halfway there",    desc: "Find half of all the cards",        reward: 300,  test: () => found() >= Math.ceil(G.cards.length / 2) },
     { id: "full",    name: "Gotta have them all", desc: "Find every card",                reward: 2000, test: () => G.cards.length > 0 && found() >= G.cards.length },
     { id: "type",    name: "Type master",      desc: "Find every card of one type",       reward: 400,  test: () => typeDone() },

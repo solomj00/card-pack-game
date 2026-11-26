@@ -525,8 +525,13 @@
     const h = r.hype || 0;
     if (!h) return;
     sfx.hype(h);
-    if (h >= 2) confetti(h >= 3 ? 220 : 90, [r.glow || "#fff", "#ffffff", "#ff2e7e", "#7af6ff"]);
+    if (h >= 2) confetti(h >= 4 ? 420 : h >= 3 ? 220 : 90, [r.glow || "#fff", "#ffffff", "#ff2e7e", "#7af6ff"]);
     if (h >= 3) flash();
+    if (h >= 4) {   // Impossible: a second flash, more confetti and a deep boom
+      setTimeout(flash, 450); setTimeout(() => confetti(300, ["#7af6ff", "#ff4fd8", "#ffd84a", "#ffffff", "#b38cff"]), 600);
+      tone(55, 0, 1.4, "sawtooth", .12); tone(82, .05, 1.2, "sine", .1);
+      document.body.classList.add("quake"); setTimeout(() => document.body.classList.remove("quake"), 700);
+    }
   }
 
   // =================== 2. Reveal one card at a time ===================
@@ -564,10 +569,10 @@
 
       // build-up before a rare card flips
       if (h > 0 && r.glow && !skipping) {
-        call.textContent = h >= 3 ? "Something huge…" : h >= 2 ? "It's shimmering…" : "Ooh…";
+        call.textContent = h >= 4 ? "Wait… this can't be…" : h >= 3 ? "Something huge…" : h >= 2 ? "It's shimmering…" : "Ooh…";
         big.classList.add("charge", "h" + h);
         sfx.charge();
-        await wait(calm ? 0 : 500 + h * 300);
+        await wait(calm ? 0 : 500 + h * 300 + (h >= 4 ? 1200 : 0));
         big.classList.remove("charge", "h" + h);
       }
 

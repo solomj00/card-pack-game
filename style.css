@@ -790,3 +790,16 @@ dialog.wheel-dlg { width: min(460px, calc(100vw - 24px)); text-align: center; }
   .side-foot .level { display: none; }
   .toolbar .seg { flex-wrap: wrap; }
 }
+
+/* =====================  Impossible rarity  ===================== */
+@property --spin { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.card[data-frame="cosmic"]::before { padding: 5px; animation: cosmic 3s linear infinite;
+  background: conic-gradient(from var(--spin), #7af6ff, #b38cff, #ff4fd8, #ffd84a, #8dff9a, #7af6ff); }
+@keyframes cosmic { to { --spin: 360deg; } }
+.card[data-r="impossible"] { box-shadow: 0 0 18px rgba(122, 246, 255, .55), 0 0 40px rgba(255, 79, 216, .35); }
+.card[data-r="impossible"] .top .name { background: linear-gradient(90deg, #7af6ff, #ff4fd8, #ffd84a); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
+.big.charge.h4 { animation: rumble .06s linear infinite; }
+.big.charge.h4 .back { box-shadow: 0 0 0 6px #7af6ff, 0 0 90px 40px #ff4fd8; }
+body.quake .main { animation: quake .7s ease-out; }
+@keyframes quake { 10%, 50% { transform: translate(-6px, 3px); } 30%, 70% { transform: translate(6px, -3px); } 90% { transform: translate(-2px, 1px); } }
+@media (prefers-reduced-motion: reduce) { .card[data-frame="cosmic"]::before { animation: none; } body.quake .main { animation: none; } }

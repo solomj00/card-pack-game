@@ -23,6 +23,7 @@ SCENES = {
     "Rock":     dict(sky=("#3a2418", "#a8643a", "#f2c38b"), far="#7a4a2c", near="#4a2c1a", sun="#fff0cf", bits="dust"),
     "Normal":   dict(sky=("#3d5a8a", "#88b6e6", "#f8e9c8"), far="#6f93b8", near="#4f7a5a", sun="#fffbe8", bits="petal"),
     "Dragon":   dict(sky=("#08142b", "#1d3f6e", "#3fd6b0"), far="#16305a", near="#0b1b38", sun="#e8fff7", bits="aurora"),
+    "Void":     dict(sky=("#020108", "#1a0b3a", "#5a1a7a"), far="#12082a", near="#07040f", sun="#e9d8ff", bits="star"),
     "Gold":     dict(sky=("#3a2606", "#a8740f", "#ffe08a"), far="#7a520c", near="#4a3206", sun="#fff7d6", bits="glint"),
 }
 
@@ -73,6 +74,11 @@ def scene(kind, w, h, seed, fancy=False):
             y0 = h * (.12 + i * .08)
             g += f'<path d="M0 {y0:.0f} C{w*.3:.0f} {y0-40:.0f} {w*.6:.0f} {y0+50:.0f} {w} {y0-10:.0f}" stroke="{["#3fd6b0","#7af6ff","#b38cff"][i]}" stroke-width="{18-i*4}" fill="none" opacity=".35" stroke-linecap="round"/>'
     g += f'<circle cx="{sx:.0f}" cy="{sy:.0f}" r="{w*.28:.0f}" fill="url(#glow)"/><circle cx="{sx:.0f}" cy="{sy:.0f}" r="{w*.07:.0f}" fill="{s["sun"]}"/>'
+    if kind == "Void":  # nebula clouds and a ring planet
+        for (nx, ny, rx, ry, col) in [(.25, .3, .5, .22, "#ff4fd8"), (.7, .45, .45, .2, "#7af6ff"), (.45, .15, .35, .12, "#b38cff")]:
+            g += f'<ellipse cx="{w*nx:.0f}" cy="{h*ny:.0f}" rx="{w*rx:.0f}" ry="{h*ry:.0f}" fill="{col}" opacity=".18" transform="rotate(-18 {w*nx:.0f} {h*ny:.0f})"/>'
+        g += f'<ellipse cx="{sx:.0f}" cy="{sy:.0f}" rx="{w*.16:.0f}" ry="{w*.035:.0f}" fill="none" stroke="#ffd84a" stroke-width="3" opacity=".7" transform="rotate(-20 {sx:.0f} {sy:.0f})"/>'
+        g += particles(rng, "star", w, h, 60, "#fff")
     if kind == "Ghost":
         g += f'<circle cx="{sx + w*.03:.0f}" cy="{sy - w*.015:.0f}" r="{w*.065:.0f}" fill="{a}"/>'
     if kind == "Electric":
@@ -204,6 +210,7 @@ P = dict(  # colour sets
     dusk=dict(body="#6b4fb0", belly="#d9ccff", wing="#a48ae6", dark="#3d2a73", accent="#c9b8ff", eye="#7dffd8"),
     crag=dict(body="#a07a58", belly="#ecd7b8", wing="#c9a27c", dark="#6a4a33", accent="#5a4636", eye="#ffb347"),
     cloud=dict(body="#f3eadf", belly="#ffd8e8", wing="#ffffff", dark="#c9b7a6", accent="#ff9cc4", eye="#5b8cff"),
+    void=dict(body="#2a1650", belly="#7af6ff", wing="#b38cff", dark="#120a2a", accent="#ff4fd8", eye="#7af6ff"),
     aurex=dict(body="#1f9e8a", belly="#d8fff3", wing="#7af6d8", dark="#11695c", accent="#ffd84a", eye="#ff5c9a"),
 )
 def sp(name, pal, stage, scene, tip, horns, **kw):
@@ -227,6 +234,7 @@ SPECIES = {
     "cragmaw":    sp("Cragmaw", "crag", 2, "Rock", "club", "curl"),
     "puffscale":  sp("Puffscale", "cloud", 1, "Normal", "puff", "nubs"),
     "glimmerkin": sp("Glimmerkin", "cloud", 2, "Normal", "puff", "curl", body="#f7d9e3", belly="#fff8ee", dark="#d6a3b6"),
+    "nullwyrm":   sp("Nullwyrm", "void", 3, "Void", "crystal", "crown", spots=[(-30, 0, 4), (-10, -18, 3), (8, 6, 3), (-22, 26, 3)]),
     "aurex":      sp("Elder Aurex", "aurex", 3, "Dragon", "crystal", "crown"),
 }
 
@@ -242,6 +250,7 @@ SPECIALS = [  # full-picture versions for the top rarities
     ("duskdrake-ir.svg", "duskdrake", 106, True, False),
     ("aurex-sir.svg", "aurex", 107, True, False),
     ("aurex-gold.svg", "aurex", 108, True, True),
+    ("nullwyrm-impossible.svg", "nullwyrm", 109, True, False),
 ]
 for f, k, seed, fancy, gold in SPECIALS:
     ART.append((f, k, "full", seed, fancy, gold))
