@@ -69,6 +69,9 @@
     try { localStorage.setItem(SET.saveKey, JSON.stringify(save)); } catch (e) {}
   }
   save.counts = save.counts && typeof save.counts === "object" ? save.counts : {};
+  // Coins (see COINS in cards.js). null = coins are switched off and packs are free.
+  const CO = typeof COINS !== "undefined" && COINS.enabled !== false ? COINS : null;
+  if (CO && typeof save.coins !== "number") { save.coins = CO.start || 0; save.lastFree = 0; save.earned = 0; save.spent = 0; }
   // The rarity list changed since this save was made: move pull counts to the new names
   // and work out the best pull again from the cards you own.
   if (save.rarities !== RARITY_KEYS.join()) {
@@ -229,11 +232,83 @@
   const packAttrs = (pack) =>
     `style="--pack:${esc(pack.color || "#ffc929")};--pack2:${esc(pack.color2 || pack.color || "#ffc929")};--pack-ink:${inkFor(pack.color2 || pack.color)}" data-pattern="${esc(pack.pattern || "crimp")}" data-finish="${esc(pack.finish || "matte")}" data-art="${pack.artSize === "whole" && coverOf(pack) ? "whole" : "window"}"`;
 
+  // =================== Coins ===================
+  const fmt = (n) => Math.round(n).toLocaleString();
+  const coinTag = (n) => `<span class="price"><i class="coin" aria-hidden="true"></i>${fmt(n)}</span>`;
+  function priceOf(pack) {
+    if (!CO) return 0;
+    if (typeof pack.price === "number") return pack.price;
+    const base = pack.slots.length * (CO.perCard || 0) + pack.slots.reduce((t, s) => t + ((CO.guaranteeExtra || {})[s.min] || 0), 0);
+    const mult = (CO.luckPrice || {})[pack.luck || 1] || 1;
+    return Math.max(5, Math.round((base * mult) / 5) * 5);
+  }
+  const boxPrice = (pack, n = 10) => (CO ? Math.round((priceOf(pack) * n * (CO.boxDiscount || 1)) / 5) * 5 : 0);
+  const freeWait = () => (CO ? Math.max(0, (save.lastFree || 0) + (CO.freeEveryHours || 4) * 3600e3 - Date.now()) : 0);
+  const sellValue = (c) => (CO ? (CO.sell || {})[c.rarity] || 0 : 0);
+  const dupes = () => live().filter((c) => (save.owned[c.id] || 0) > 1);
+  const dupeValue = () => dupes().reduce((t, c) => t + (save.owned[c.id] - 1) * sellValue(c), 0);
+
+  function renderWallet() {
+    const w = $("wallet");
+    if (!CO) { w.hidden = true; return; }
+    w.hidden = false;
+    $("coinBal").textContent = fmt(save.coins);
+    const left = freeWait(), btn = $("freeCoins");
+    if (left <= 0) { btn.disabled = false; btn.innerHTML = `Claim ${coinTag(CO.free)} free`; }
+    else {
+      const mins = Math.ceil(left / 60e3), h = Math.floor(mins / 60), m = mins % 60;
+      btn.disabled = true; btn.textContent = `Free coins in ${h ? h + "h" : ""}${h && m ? " " : ""}${m || !h ? m + "m" : ""}`;
+    }
+  }
+  function earn(n) {
+    if (!CO || n <= 0) return;
+    save.coins += n; save.earned = (save.earned || 0) + n; store(); renderWallet();
+    const b = $("coinBal"); b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump");
+    tone(880, 0, .08); tone(1320, .07, .12);
+  }
+  // Pay for something; if there aren't enough coins, say how to get more
+  function spend(n) {
+    if (!CO || n <= 0) return true;
+    if (save.coins >= n) { save.coins -= n; save.spent = (save.spent || 0) + n; store(); renderWallet(); return true; }
+    const ways = [];
+    if (freeWait() <= 0) ways.push(`<button type="button" class="btn small" data-act="free">Claim ${fmt(CO.free)} free coins</button>`);
+    if (dupeValue() > 0) ways.push(`<button type="button" class="btn small alt" data-act="sell">Sell duplicates for ${fmt(dupeValue())}</button>`);
+    toast(`<b>Not enough coins.</b> You need ${fmt(n - save.coins)} more.` + (ways.length ? `<div class="toast-acts">${ways.join("")}</div>`
+      : ` Free coins come back in ${Math.ceil(freeWait() / 60e3)} min.`), 6000);
+    return false;
+  }
+  function claimFree() {
+    if (!CO || freeWait() > 0) return;
+    save.lastFree = Date.now(); earn(CO.free);
+    toast(`+${fmt(CO.free)} coins! Come back in ${CO.freeEveryHours} hours for more.`);
+  }
+  function sellDupes() {
+    const total = dupeValue(), n = dupes().reduce((t, c) => t + save.owned[c.id] - 1, 0);
+    if (!total) return;
+    dupes().forEach((c) => { save.owned[c.id] = 1; });
+    earn(total); renderBinder();
+    toast(`Sold ${n} duplicate card${n === 1 ? "" : "s"} for ${fmt(total)} coins.`);
+  }
+  let toastTimer = null;
+  function toast(html, ms = 3500) {
+    const t = $("toast");
+    t.innerHTML = html; t.hidden = false; t.classList.remove("show"); void t.offsetWidth; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.remove("show"); setTimeout(() => (t.hidden = true), 300); }, ms);
+  }
+  $("toast").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    if (b.dataset.act === "free") claimFree();
+    if (b.dataset.act === "sell") sellDupes();
+  });
+  $("freeCoins").onclick = claimFree;
+  setInterval(renderWallet, 30e3);
+
   function packHTML(pack, i) {
     return `<div class="pick">
       <button class="pack" data-pack="${i}" ${packAttrs(pack)} aria-label="Open a ${esc(pack.name)} pack">${packFace(pack, i)}</button>
       <p class="about">${pack.showName === false ? `<b class="pack-name">${esc(pack.name)}</b><br>` : ""}${pack.mine ? '<span class="yours">Yours</span> ' : ""}${esc(pack.about || "")}</p>
-      <button type="button" class="mini-btn" data-box="${i}">Open a box of 10</button></div>`;
+      ${CO ? `<p class="pack-price">${coinTag(priceOf(pack))} a pack</p>` : ""}
+      <button type="button" class="mini-btn" data-box="${i}">Open a box of 10${CO ? " · " + coinTag(boxPrice(pack)) : ""}</button></div>`;
   }
 
   // What the Space key does right now (changes with each screen)
@@ -274,6 +349,10 @@
       <div><b>${t}</b><p>${d}</p></div></li>`).join("")}</ol>`;
 
   async function choose(el) {
+    if (!spend(priceOf(allPacks()[+el.dataset.pack]))) {
+      el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+      return;
+    }
     spaceAction = null;
     const picks = [...document.querySelectorAll("#stage .pick")];
     document.querySelectorAll("#stage .pack, #stage [data-box]").forEach((p) => (p.onclick = null));
@@ -439,7 +518,7 @@
           <div class="tag"${animate ? "" : ' style="opacity:1"'}>${isNew[i] ? '<span class="newtag">New!</span>' : "&nbsp;"}</div></div>`;
       }).join("")}</div>
       <div class="actions" id="resultActions"${animate ? " hidden" : ""}>
-        ${lastPack ? `<button class="btn" id="again">Open another ${esc(lastPack.name)}</button>` : ""}
+        ${lastPack ? `<button class="btn" id="again">Open another ${esc(lastPack.name)}${CO ? " · " + coinTag(priceOf(lastPack)) : ""}</button>` : ""}
         <button class="btn alt" id="choose">Choose a different pack</button></div></div>`;
     const slots = [...document.querySelectorAll("#stage .slot")];
     slots.forEach((slot) => {
@@ -475,7 +554,7 @@
 
   // =================== Booster box: open 10 packs at once ===================
   function openBox(packDef, n = 10) {
-    if (!packDef) return;
+    if (!packDef || !spend(boxPrice(packDef, n))) return;
     lastPack = packDef;
     const all = [], fresh = new Set();
     for (let i = 0; i < n; i++) {
@@ -492,7 +571,7 @@
       <h3>Hits <span class="muted">(${hits.length})</span></h3>
       ${hits.length ? `<div class="hit-grid in-dlg">${hits.map((c) => hitHTML(c, fresh.has(c.id) ? "New!" : "")).join("")}</div>`
         : `<p class="muted">No rare cards in this box. Unlucky!</p>`}
-      <div class="actions"><button class="btn" id="boxAgain">Open another box</button><button class="btn alt" data-close>Done</button></div>`;
+      <div class="actions"><button class="btn" id="boxAgain">Open another box${CO ? " · " + coinTag(boxPrice(packDef, n)) : ""}</button><button class="btn alt" data-close>Done</button></div>`;
     const d = $("boxDlg");
     if (!d.open) d.showModal();
     d.querySelector(".dlg-body, #boxBody").scrollTop = 0;
@@ -523,6 +602,7 @@
         <div><span>Cards pulled</span><b>${total}</b></div>
         <div><span>Found</span><b>${found} / ${CARDS.length}</b></div>
         <div><span>Best pull</span><b>${save.best < 0 ? "—" : esc(RARITIES[RARITY_KEYS[save.best]].label)}</b></div>
+        ${CO ? `<div><span>Coins spent</span><b>${fmt(save.spent || 0)}</b></div><div><span>Coins earned</span><b>${fmt(save.earned || 0)}</b></div>` : ""}
       </div>
       <h3>Your pulls by rarity</h3>
       <div class="rate-list">${RARITY_KEYS.map((k) => {
@@ -563,10 +643,24 @@
       return `<div class="mini${n ? "" : " missing"}${rarityOf(c).shine ? " shine" : ""}">
         ${n > 1 ? `<span class="count">×${n}</span>` : ""}${cardHTML(c, !n)}</div>`;
     }).join("") || "<p>No cards here yet.</p>";
+    const sb = $("sellDupes");
+    if (CO) {
+      const v = dupeValue();
+      sb.hidden = false; sb.disabled = !v;
+      sb.innerHTML = v ? `Sell duplicates for ${coinTag(v)}` : "No duplicates to sell";
+    } else sb.hidden = true;
     renderHits();
     renderHero();
+    renderWallet();
   }
   $("filters").onclick = (e) => { const b = e.target.closest("[data-f]"); if (b) { filter = b.dataset.f; renderBinder(); } };
+
+  let sellArmed = false;
+  $("sellDupes").onclick = () => {
+    const b = $("sellDupes");
+    if (!sellArmed) { sellArmed = true; b.textContent = "Tap again to sell (keeps one of each)"; setTimeout(() => { sellArmed = false; renderBinder(); }, 3000); return; }
+    sellArmed = false; sellDupes();
+  };
 
   // Reset asks for a second tap instead of a pop-up
   let armed = false;
@@ -577,7 +671,8 @@
       setTimeout(() => { armed = false; b.textContent = "Reset collection"; }, 3000);
       return;
     }
-    save = { packs: 0, owned: {}, best: -1, hits: [], counts: {}, setVersion: SET.version || 1, rarities: RARITY_KEYS.join() };
+    save = { packs: 0, owned: {}, best: -1, hits: [], counts: {}, setVersion: SET.version || 1, rarities: RARITY_KEYS.join(),
+      ...(CO ? { coins: CO.start || 0, lastFree: 0, earned: 0, spent: 0 } : {}) };
     store(); armed = false; b.textContent = "Reset collection";
     renderBinder(); showPack();
   };
@@ -629,12 +724,15 @@
     showPicker: showPack,
     // Open a pack straight away (used by "Open it now")
     openNow(pack) {
+      if (!spend(priceOf(pack))) return false;
       spaceAction = null;
       $("stage").innerHTML = `<div class="picker"><p class="hint" style="visibility:hidden">.</p><div class="packs">
         <div class="pick chosen"><button class="pack" ${packAttrs(pack)}>${packFace(pack)}</button></div></div></div>`;
       const el = $("stage").querySelector(".pack");
       openPack(pack, el);
+      return true;
     },
+    priceOf, boxPrice, get coinsOn() { return !!CO; },
   };
 
   renderBinder();

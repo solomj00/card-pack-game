@@ -84,6 +84,7 @@
     $("wsPreview").innerHTML = `<div class="pack big-pack" ${G.packAttrs(pack)}>${G.packFace(pack)}</div>`;
     $("wsOdds").innerHTML = `<div class="odds-title">Chance per pack</div>` + odds(pack).map(([r, p]) =>
       `<div class="odd"><span>${esc(r.label)} or better</span><span class="bar"><i style="width:${Math.max(2, p * 100)}%;background:${esc(r.glow || "#fff")}"></i></span><b>${pct(p)}</b></div>`).join("");
+    if (G.coinsOn) $("wsOdds").innerHTML += `<div class="odds-price"><span>Price</span><b><i class="coin" aria-hidden="true"></i>${G.priceOf(pack).toLocaleString()} a pack</b></div>`;
   }
 
   const chip = (group, val, label, on) =>
@@ -272,7 +273,7 @@
     }
     paintMine();
     go("play", false);
-    G.openNow(pack);
+    if (!G.openNow(pack)) G.showPicker();
     scrollTo({ top: 0, behavior: "smooth" });
   };
 

@@ -97,6 +97,16 @@ If there are no packs yet, the site starts in the workshop.
 - **View stats:** packs opened, cards pulled, and your pull rate for each rarity.
 - **Collection:** your binder, on its own tab.
 
+## Coins
+Packs cost coins. New players start with 500.
+- **Prices** depend on how many cards a pack has, its guaranteed hit and its luck. Each pack shows its price, and the pack builder shows the price as you design. A box of 10 costs 10% less than 10 packs.
+- **Earning coins:**
+  - **Free coins:** claim 150 every 4 hours with the button in the sidebar.
+  - **Selling duplicates:** on the Collection tab, sell every extra copy and keep one of each. Rarer cards sell for more.
+- **Not enough coins?** The game tells you how many more you need and offers free coins or selling duplicates, whichever is available.
+- **Settings:** edit `COINS` at the bottom of `cards.js` to change the starting coins, free amount and timer, prices, box discount and sell values. Set `enabled: false` to make every pack free. A ready-made pack can set its own `price`.
+- **Starting over:** **Reset collection** also resets your coins to the starting amount.
+
 ## Colours and look
 The theme colours are at the bottom of `style.css`, under **THEME**. Change `--accent` to recolour every button and highlight.
 

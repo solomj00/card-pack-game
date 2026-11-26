@@ -6,7 +6,7 @@
   <title>Card Opening Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 <canvas id="confetti" aria-hidden="true"></canvas>
@@ -22,6 +22,10 @@
       <a href="#collection" id="tabCollection" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 5v16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Collection</span></a>
     </nav>
     <div class="side-foot">
+      <div class="wallet" id="wallet" hidden>
+        <div class="bal"><i class="coin coin-lg" aria-hidden="true"></i><b id="coinBal" aria-live="polite">0</b><span>coins</span></div>
+        <button class="side-btn free" id="freeCoins">Free coins</button>
+      </div>
       <button class="side-btn" id="sound" aria-pressed="true">Sound: on</button>
     </div>
   </aside>
@@ -191,10 +195,12 @@
         <div class="filters" id="filters"></div>
       </div>
       <div class="grid" id="grid"></div>
-      <div class="actions"><button class="btn alt" id="reset">Reset collection</button></div>
+      <div class="actions"><button class="btn" id="sellDupes" hidden>Sell duplicates</button><button class="btn alt" id="reset">Reset collection</button></div>
     </section>
   </div>
 </div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <!-- Stats -->
 <dialog class="dlg" id="statsDlg" aria-labelledby="statsTitle">
@@ -209,9 +215,9 @@
 </dialog>
 
 <!-- Load order matters: your cards first, then the game -->
-<script src="cards.js?v=12"></script>
-<script src="game.js?v=12"></script>
-<script src="builder.js?v=12"></script>
-<script src="maker.js?v=12"></script>
+<script src="cards.js?v=13"></script>
+<script src="game.js?v=13"></script>
+<script src="builder.js?v=13"></script>
+<script src="maker.js?v=13"></script>
 </body>
 </html>

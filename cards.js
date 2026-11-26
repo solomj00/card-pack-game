@@ -109,3 +109,19 @@ const CARDS = [
   { name: "Elder Aurex", type: "Dragon",   rarity: "exotic",       hp: 230, move: "Northern Sky",  damage: 220, image: "images/aurex-sir.svg" },
   { name: "Elder Aurex", type: "Dragon",   rarity: "exotic",       hp: 250, move: "Hoard of Ages", damage: 250, image: "images/aurex-gold.svg", frame: "gold" },
 ];
+
+// ---- 6. Coins ----------------------------------------------------------
+// Packs cost coins. Players earn coins from free claims and by selling
+// duplicate cards. Set enabled to false to make every pack free.
+const COINS = {
+  enabled: true,
+  start: 500,             // coins a new player starts with
+  free: 150,              // coins from the "Free coins" button
+  freeEveryHours: 4,      // how often free coins can be claimed
+  perCard: 12,            // pack price per card
+  guaranteeExtra: { rare: 10, epic: 50, legendary: 200, exotic: 600 },  // added for a guaranteed slot
+  luckPrice: { 2: 1.6, 4: 2.5 },   // price multiplier for Lucky ×2 / ×4
+  boxDiscount: 0.9,       // a box of 10 costs 90% of 10 packs
+  sell: { common: 2, rare: 8, epic: 30, legendary: 120, exotic: 400 },  // coins per duplicate sold
+};
+// A ready-made pack in PACKS can set its own price, e.g. price: 100
