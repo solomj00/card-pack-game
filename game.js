@@ -5,8 +5,13 @@
 {
   const $ = (id) => document.getElementById(id);
   const RARITY_KEYS = Object.keys(RARITIES);          // in order, lowest first
-  const rank = (key) => RARITY_KEYS.indexOf(key);
-  const rarityOf = (card) => RARITIES[card.rarity] || RARITIES[RARITY_KEYS[0]];
+  // Turn an old or unknown rarity name into one from RARITIES (see RARITY_RENAMES in cards.js)
+  const RENAMES = typeof RARITY_RENAMES !== "undefined" ? RARITY_RENAMES : {};
+  const norm = (k) => (RARITIES[k] ? k : RARITIES[RENAMES[k]] ? RENAMES[k] : RARITY_KEYS[0]);
+  const rank = (key) => RARITY_KEYS.indexOf(norm(key));
+  // "Hits" are Epic and better (the third rarity onwards)
+  const HIT_RANK = Math.min(2, RARITY_KEYS.length - 1);
+  const rarityOf = (card) => RARITIES[norm(card.rarity)];
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -19,15 +24,25 @@
   // Packs made in the Build-a-pack workshop (saved in this browser)
   let myPacks = [];
   try { const p = JSON.parse(localStorage.getItem(SET.saveKey + "-packs")); if (Array.isArray(p)) myPacks = p; } catch (e) {}
+  const fixSlots = (list) => list.forEach((p) => (p.slots || []).forEach((s) => { s.min = norm(s.min); }));
+  fixSlots(PACK_LIST);
+  if (myPacks.some((p) => (p.slots || []).some((s) => !RARITIES[s.min]))) {
+    fixSlots(myPacks);
+    try { localStorage.setItem(SET.saveKey + "-packs", JSON.stringify(myPacks)); } catch (e) {}
+  }
   const allPacks = () => PACK_LIST.concat(myPacks);
 
   // Give every card an id (its position in the list)
-  CARDS.forEach((card, i) => { card.id = i; });
+  CARDS.forEach((card, i) => { card.id = i; card.rarity = norm(card.rarity); });
 
   // Cards made on the "Make cards" tab (saved in this browser). Their ids start with "c".
   let myCards = [];
   try { const c = JSON.parse(localStorage.getItem(SET.saveKey + "-cards")); if (Array.isArray(c)) myCards = c; } catch (e) {}
   const BUILT_IN = CARDS.length;
+  if (myCards.some((c) => !RARITIES[c.rarity])) {
+    myCards.forEach((c) => { c.rarity = norm(c.rarity); });
+    try { localStorage.setItem(SET.saveKey + "-cards", JSON.stringify(myCards)); } catch (e) {}
+  }
   const syncCards = () => { CARDS.length = BUILT_IN; myCards.forEach((c) => { c.custom = true; CARDS.push(c); }); };
   syncCards();
   // Players can switch the sample cards from cards.js off and play with only their own
@@ -54,6 +69,16 @@
     try { localStorage.setItem(SET.saveKey, JSON.stringify(save)); } catch (e) {}
   }
   save.counts = save.counts && typeof save.counts === "object" ? save.counts : {};
+  // The rarity list changed since this save was made: move pull counts to the new names
+  // and work out the best pull again from the cards you own.
+  if (save.rarities !== RARITY_KEYS.join()) {
+    const counts = {};
+    Object.entries(save.counts).forEach(([k, n]) => { counts[norm(k)] = (counts[norm(k)] || 0) + n; });
+    save.counts = counts;
+    save.best = Math.max(-1, ...Object.keys(save.owned).map((id) => byId(id)).filter(Boolean).map((c) => rank(c.rarity)));
+    save.rarities = RARITY_KEYS.join();
+    try { localStorage.setItem(SET.saveKey, JSON.stringify(save)); } catch (e) {}
+  }
   const store = () => { try { localStorage.setItem(SET.saveKey, JSON.stringify(save)); } catch (e) {} };
 
   // ---------- Apply set settings ----------
@@ -135,7 +160,7 @@
         <img src="${esc(card.image)}" alt="${esc(card.name)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'${initials}'}))"></div>`;
     }
     const full = card.art ? card.art === "full" : !!r.fullArt;
-    return `<div class="card${full ? " full" : ""}" data-r="${esc(card.rarity)}"${r.frame ? ` data-frame="${esc(r.frame)}"` : ""} style="--c:${color};--a:${picBg}">
+    return `<div class="card${full ? " full" : ""}" data-r="${esc(card.rarity)}"${(card.frame || r.frame) ? ` data-frame="${esc(card.frame || r.frame)}"` : ""} style="--c:${color};--a:${picBg}">
       <div class="top"><span class="name">${hidden ? "???" : esc(card.name)}</span><span>${esc(card.hp)} HP</span></div>
       <div class="pic">${pic}</div>
       <div class="move"><span>${esc(card.move)}</span><span>${esc(card.damage)}</span></div>
@@ -152,7 +177,7 @@
     return p.length ? p : all;
   };
   // luck multiplies the weight of Rare and better (2 = twice as likely, and so on)
-  const weightOf = (k, luck = 1) => RARITIES[k].weight * (rank(k) >= 2 ? luck : 1);
+  const weightOf = (k, luck = 1) => RARITIES[k].weight * (rank(k) >= 1 ? luck : 1);
   function pull(min, pool, luck = 1) {
     const options = RARITY_KEYS.slice(Math.max(0, rank(min)));
     let roll = Math.random() * options.reduce((t, k) => t + weightOf(k, luck), 0);
@@ -266,7 +291,7 @@
       save.owned[c.id] = (save.owned[c.id] || 0) + 1;
       save.best = Math.max(save.best, rank(c.rarity));
       save.counts[c.rarity] = (save.counts[c.rarity] || 0) + 1;
-      if (rank(c.rarity) >= 2) save.hits.unshift({ id: c.id, pack: packDef.name, t: Date.now() });
+      if (rank(c.rarity) >= HIT_RANK) save.hits.unshift({ id: c.id, pack: packDef.name, t: Date.now() });
     });
     save.hits.length = Math.min(save.hits.length, 60);
     return { pulls, isNew };
@@ -451,7 +476,7 @@
     }
     store(); renderBinder();
     const counts = RARITY_KEYS.map((k) => [RARITIES[k], all.filter((c) => c.rarity === k).length]);
-    const hits = all.filter((c) => rank(c.rarity) >= 2).sort((a, b) => rank(b.rarity) - rank(a.rarity));
+    const hits = all.filter((c) => rank(c.rarity) >= HIT_RANK).sort((a, b) => rank(b.rarity) - rank(a.rarity));
     const top = hits[0] ? rarityOf(hits[0]) : null;
     $("boxBody").innerHTML = `
       <p class="box-sum"><b>${n} ${esc(packDef.name)} packs</b> · ${all.length} cards · ${fresh.size} new to your collection</p>
@@ -478,7 +503,7 @@
     $("hitCount").textContent = list.length ? `${list.length} hit${list.length === 1 ? "" : "s"}` : "";
     $("hits").innerHTML = list.length ? list.slice(0, 30).map(({ h, c }) => hitHTML(c, "from " + h.pack)).join("")
       : `<div class="hits-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l-1 4H7zM7 7h10v14H7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-        <b>No card hits yet</b><span>Rare and better pulls will show up here as you open packs.</span></div>`;
+        <b>No card hits yet</b><span>${esc(RARITIES[RARITY_KEYS[HIT_RANK]].label)} and better pulls will show up here as you open packs.</span></div>`;
   }
 
   function showStats() {
@@ -544,7 +569,7 @@
       setTimeout(() => { armed = false; b.textContent = "Reset collection"; }, 3000);
       return;
     }
-    save = { packs: 0, owned: {}, best: -1, hits: [], counts: {}, setVersion: SET.version || 1 };
+    save = { packs: 0, owned: {}, best: -1, hits: [], counts: {}, setVersion: SET.version || 1, rarities: RARITY_KEYS.join() };
     store(); armed = false; b.textContent = "Reset collection";
     renderBinder(); showPack();
   };

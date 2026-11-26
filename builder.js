@@ -21,7 +21,7 @@
   const fresh = () => ({
     id: null, name: "MY PACK", color: "#ff4f6d", color2: "#ffc929", pattern: "stripes", finish: "glossy",
     coverMode: "auto", coverCard: null, coverImg: "", count: 5,
-    guarantee: RARITY_KEYS[2] || "", luck: 1, types: [],
+    guarantee: RARITY_KEYS[1] || "", luck: 1, types: [],
   });
   let s = fresh();
 
@@ -29,7 +29,6 @@
   function toPack(st = s) {
     const n = Math.max(1, Math.min(10, +st.count || 5));
     const slots = Array.from({ length: n }, () => ({ min: RARITY_KEYS[0] }));
-    if (n >= 4 && RARITY_KEYS[1]) slots[n - 2] = { min: RARITY_KEYS[1] };
     if (st.guarantee) slots[n - 1] = { min: st.guarantee };
     const bits = [`${n} card${n === 1 ? "" : "s"}`];
     if (st.guarantee) bits.push(`1 ${RARITIES[st.guarantee].label.toLowerCase()} or better`);
@@ -49,12 +48,12 @@
     id: p.id, name: p.name, color: p.color, color2: p.color2 || p.color, pattern: p.pattern || "crimp",
     finish: p.finish || "matte", coverMode: p.coverMode || (p.coverImg ? "upload" : p.coverCard != null ? "card" : "auto"),
     coverCard: p.coverCard ?? null, coverImg: p.coverImg || "", count: p.slots.length,
-    guarantee: (p.slots.find((x) => G.rank(x.min) >= 2) || {}).min || "", luck: p.luck || 1, types: p.types || [],
+    guarantee: (p.slots.find((x) => G.rank(x.min) >= 1) || {}).min || "", luck: p.luck || 1, types: p.types || [],
   });
 
   // ---------- Odds: chance of at least one card of each rarity ----------
   function odds(pack) {
-    return RARITY_KEYS.slice(2).map((k) => {
+    return RARITY_KEYS.slice(1).map((k) => {
       const r = G.rank(k);
       let none = 1;
       for (const slot of pack.slots) {

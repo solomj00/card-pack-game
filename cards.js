@@ -21,16 +21,18 @@ const SET = {
 // fullArt: true = the picture fills the whole card (a card can override this).
 // frame:   special border for the full-picture cards: "rainbow" or "gold".
 const RARITIES = {
-  common:       { label: "Common",                    weight: 60,   symbol: "●",   shine: false, glow: "",        hype: 0 },
-  uncommon:     { label: "Uncommon",                  weight: 25,   symbol: "◆",   shine: false, glow: "",        hype: 0 },
-  rare:         { label: "Rare",                      weight: 10,   symbol: "★",   shine: false, glow: "#7ad3ff", hype: 1 },
-  holo:         { label: "Holo Rare",                 weight: 4,    symbol: "★H",  shine: true,  glow: "#ff6ad5", hype: 2 },
-  ultra:        { label: "Ultra Rare",                weight: 1.5,  symbol: "✦",   shine: true,  glow: "#ffd84a", hype: 2 },
-  fullart:      { label: "Full Art",                  weight: 1,    symbol: "FA",  shine: true,  glow: "#c6a6ff", hype: 2, fullArt: true },
-  gallery:      { label: "Gallery",                   weight: 0.8,  symbol: "GL",  shine: true,  glow: "#8dffcf", hype: 2, fullArt: true },
-  illustration: { label: "Illustration Rare",         weight: 0.6,  symbol: "IR",  shine: true,  glow: "#ff9a5c", hype: 3, fullArt: true },
-  special:      { label: "Special Illustration Rare", weight: 0.25, symbol: "SIR", shine: true,  glow: "#ff5cd6", hype: 3, fullArt: true, frame: "rainbow" },
-  secret:       { label: "Secret Rare",               weight: 0.12, symbol: "SR",  shine: true,  glow: "#ffd84a", hype: 3, fullArt: true, frame: "gold" },
+  common:    { label: "Common",    weight: 70,  symbol: "●", shine: false, glow: "",        hype: 0 },
+  rare:      { label: "Rare",      weight: 22,  symbol: "★", shine: false, glow: "#4da3ff", hype: 1 },
+  epic:      { label: "Epic",      weight: 6,   symbol: "✦", shine: true,  glow: "#b35cff", hype: 2 },
+  legendary: { label: "Legendary", weight: 1.6, symbol: "♛", shine: true,  glow: "#ffb020", hype: 3, fullArt: true, frame: "gold" },
+  exotic:    { label: "Exotic",    weight: 0.4, symbol: "✺", shine: true,  glow: "#ff4fd8", hype: 3, fullArt: true, frame: "rainbow" },
+};
+
+// Old rarity names and the new rarity they become. Cards and packs saved with
+// an old name are moved to the new one automatically.
+const RARITY_RENAMES = {
+  uncommon: "common", holo: "rare", ultra: "epic", fullart: "epic", gallery: "epic",
+  illustration: "legendary", special: "legendary", secret: "exotic",
 };
 
 // ---- 3. Packs ----------------------------------------------------------
@@ -68,41 +70,42 @@ const TYPES = {
 // image: a file inside the images folder, e.g. "images/my-card.png"
 // art:   (optional) "full" = picture fills the whole card, "framed" = normal card.
 //        Leave it out to use the rarity's setting.
+// frame: (optional) "gold" or "rainbow" border, overriding the rarity's frame.
 // If the picture is missing, the card shows a placeholder instead.
 // Copy a line and change it to add a card.
 const CARDS = [
   // Fire line
   { name: "Kindlewing",  type: "Fire",     rarity: "common",       hp: 50,  move: "Ember Hop",     damage: 20,  image: "images/kindlewing.svg" },
-  { name: "Scorchtail",  type: "Fire",     rarity: "uncommon",     hp: 90,  move: "Tail Flare",    damage: 50,  image: "images/scorchtail.svg" },
-  { name: "Pyrewyrm",    type: "Fire",     rarity: "holo",         hp: 160, move: "Furnace Roar",  damage: 120, image: "images/pyrewyrm.svg" },
-  { name: "Pyrewyrm",    type: "Fire",     rarity: "fullart",      hp: 160, move: "Furnace Roar",  damage: 120, image: "images/pyrewyrm-full.svg" },
-  { name: "Pyrewyrm",    type: "Fire",     rarity: "special",      hp: 170, move: "Sunfall",       damage: 200, image: "images/pyrewyrm-sir.svg" },
+  { name: "Scorchtail",  type: "Fire",     rarity: "rare",         hp: 90,  move: "Tail Flare",    damage: 50,  image: "images/scorchtail.svg" },
+  { name: "Pyrewyrm",    type: "Fire",     rarity: "epic",         hp: 160, move: "Furnace Roar",  damage: 120, image: "images/pyrewyrm.svg" },
+  { name: "Pyrewyrm",    type: "Fire",     rarity: "legendary",    hp: 160, move: "Furnace Roar",  damage: 120, image: "images/pyrewyrm-full.svg" },
+  { name: "Pyrewyrm",    type: "Fire",     rarity: "exotic",       hp: 170, move: "Sunfall",       damage: 200, image: "images/pyrewyrm-sir.svg" },
   // Water line
   { name: "Ripplefin",   type: "Water",    rarity: "common",       hp: 50,  move: "Splash Nip",    damage: 20,  image: "images/ripplefin.svg" },
-  { name: "Tidecoil",    type: "Water",    rarity: "uncommon",     hp: 90,  move: "Riptide",       damage: 50,  image: "images/tidecoil.svg" },
-  { name: "Abyssrex",    type: "Water",    rarity: "rare",         hp: 150, move: "Deep Current",  damage: 110, image: "images/abyssrex.svg" },
-  { name: "Ripplefin",   type: "Water",    rarity: "illustration", hp: 60,  move: "Moonlit Swim",  damage: 30,  image: "images/ripplefin-ir.svg" },
+  { name: "Tidecoil",    type: "Water",    rarity: "rare",         hp: 90,  move: "Riptide",       damage: 50,  image: "images/tidecoil.svg" },
+  { name: "Abyssrex",    type: "Water",    rarity: "epic",         hp: 150, move: "Deep Current",  damage: 110, image: "images/abyssrex.svg" },
+  { name: "Ripplefin",   type: "Water",    rarity: "legendary",    hp: 60,  move: "Moonlit Swim",  damage: 30,  image: "images/ripplefin-ir.svg" },
   // Grass line
   { name: "Mossnout",    type: "Grass",    rarity: "common",       hp: 60,  move: "Leaf Sneeze",   damage: 20,  image: "images/mossnout.svg" },
-  { name: "Thornback",   type: "Grass",    rarity: "uncommon",     hp: 100, move: "Bramble Bash",  damage: 60,  image: "images/thornback.svg" },
-  { name: "Verdragor",   type: "Grass",    rarity: "rare",         hp: 160, move: "Old Growth",    damage: 120, image: "images/verdragor.svg" },
-  { name: "Mossnout",    type: "Grass",    rarity: "gallery",      hp: 60,  move: "Leaf Sneeze",   damage: 20,  image: "images/mossnout-gallery.svg" },
+  { name: "Thornback",   type: "Grass",    rarity: "rare",         hp: 100, move: "Bramble Bash",  damage: 60,  image: "images/thornback.svg" },
+  { name: "Verdragor",   type: "Grass",    rarity: "epic",         hp: 160, move: "Old Growth",    damage: 120, image: "images/verdragor.svg" },
+  { name: "Mossnout",    type: "Grass",    rarity: "legendary",    hp: 60,  move: "Leaf Sneeze",   damage: 20,  image: "images/mossnout-gallery.svg" },
   // Electric line
   { name: "Sparkhatch",  type: "Electric", rarity: "common",       hp: 50,  move: "Static Peep",   damage: 20,  image: "images/sparkhatch.svg" },
-  { name: "Voltwyrm",    type: "Electric", rarity: "rare",         hp: 140, move: "Storm Coil",    damage: 110, image: "images/voltwyrm.svg" },
-  { name: "Voltwyrm",    type: "Electric", rarity: "fullart",      hp: 140, move: "Storm Coil",    damage: 110, image: "images/voltwyrm-full.svg" },
+  { name: "Voltwyrm",    type: "Electric", rarity: "epic",         hp: 140, move: "Storm Coil",    damage: 110, image: "images/voltwyrm.svg" },
+  { name: "Voltwyrm",    type: "Electric", rarity: "legendary",    hp: 140, move: "Storm Coil",    damage: 110, image: "images/voltwyrm-full.svg" },
   // Ghost line
-  { name: "Wispwing",    type: "Ghost",    rarity: "uncommon",     hp: 60,  move: "Fade Out",      damage: 30,  image: "images/wispwing.svg" },
-  { name: "Duskdrake",   type: "Ghost",    rarity: "holo",         hp: 150, move: "Eclipse Wing",  damage: 120, image: "images/duskdrake.svg" },
-  { name: "Duskdrake",   type: "Ghost",    rarity: "illustration", hp: 150, move: "Eclipse Wing",  damage: 120, image: "images/duskdrake-ir.svg" },
+  { name: "Wispwing",    type: "Ghost",    rarity: "rare",         hp: 60,  move: "Fade Out",      damage: 30,  image: "images/wispwing.svg" },
+  { name: "Duskdrake",   type: "Ghost",    rarity: "epic",         hp: 150, move: "Eclipse Wing",  damage: 120, image: "images/duskdrake.svg" },
+  { name: "Duskdrake",   type: "Ghost",    rarity: "legendary",    hp: 150, move: "Eclipse Wing",  damage: 120, image: "images/duskdrake-ir.svg" },
   // Rock line
   { name: "Pebblehorn",  type: "Rock",     rarity: "common",       hp: 70,  move: "Headbutt",      damage: 20,  image: "images/pebblehorn.svg" },
-  { name: "Cragmaw",     type: "Rock",     rarity: "uncommon",     hp: 120, move: "Landslide",     damage: 70,  image: "images/cragmaw.svg" },
+  { name: "Cragmaw",     type: "Rock",     rarity: "rare",         hp: 120, move: "Landslide",     damage: 70,  image: "images/cragmaw.svg" },
   // Normal
   { name: "Puffscale",   type: "Normal",   rarity: "common",       hp: 50,  move: "Cloud Nap",     damage: 10,  image: "images/puffscale.svg" },
-  { name: "Glimmerkin",  type: "Normal",   rarity: "uncommon",     hp: 80,  move: "Dazzle",        damage: 40,  image: "images/glimmerkin.svg" },
+  { name: "Glimmerkin",  type: "Normal",   rarity: "rare",         hp: 80,  move: "Dazzle",        damage: 40,  image: "images/glimmerkin.svg" },
   // The legend
-  { name: "Elder Aurex", type: "Dragon",   rarity: "ultra",        hp: 220, move: "Aurora Breath", damage: 180, image: "images/aurex.svg" },
-  { name: "Elder Aurex", type: "Dragon",   rarity: "special",      hp: 230, move: "Northern Sky",  damage: 220, image: "images/aurex-sir.svg" },
-  { name: "Elder Aurex", type: "Dragon",   rarity: "secret",       hp: 250, move: "Hoard of Ages", damage: 250, image: "images/aurex-gold.svg" },
+  { name: "Elder Aurex", type: "Dragon",   rarity: "legendary",    hp: 220, move: "Aurora Breath", damage: 180, image: "images/aurex.svg", art: "framed" },
+  { name: "Elder Aurex", type: "Dragon",   rarity: "exotic",       hp: 230, move: "Northern Sky",  damage: 220, image: "images/aurex-sir.svg" },
+  { name: "Elder Aurex", type: "Dragon",   rarity: "exotic",       hp: 250, move: "Hoard of Ages", damage: 250, image: "images/aurex-gold.svg", frame: "gold" },
 ];

@@ -21,10 +21,21 @@ The game ships with **Dragon's Hoard**, an original set of 26 cards: six evoluti
 All of the art is original and is drawn by `tools/make_art.py`. To change the colours or add creatures, edit that file and run `python3 tools/make_art.py`. It rewrites the pictures in `images/`.
 
 ## Rarity tiers
-From most to least common: Common, Uncommon, Rare, Holo Rare, Ultra Rare, Full Art, Gallery, Illustration Rare, Special Illustration Rare and Secret Rare.
-- Full Art and everything rarer use the **full-picture layout**, where the art fills the whole card.
-- Special Illustration Rares get a rainbow frame, and Secret Rares get a gold frame.
+There are five rarities, from most to least common:
+
+| Rarity | Odds per card | What happens |
+|---|---|---|
+| Common | 70 in 100 | Quiet flip |
+| Rare | 22 in 100 | Blue glow and a chime |
+| Epic | 6 in 100 | Purple glow, foil shine, light rays and confetti |
+| Legendary | about 1.6 in 100 | Gold frame, full-picture card, shake, flash and big confetti |
+| Exotic | about 0.4 in 100 | Rainbow frame, full-picture card and the biggest celebration |
+
+- **Card hits** collects every Epic or better pull.
+- **Luck** in the pack builder multiplies the odds of Rare and better.
 - To change the odds, labels, glow colours or effects, edit `RARITIES` in `cards.js`.
+- Cards and packs saved with the old rarity names (Uncommon, Holo Rare, Full Art and so on) are moved to the new tiers automatically. `RARITY_RENAMES` in `cards.js` lists which old name becomes which new one.
+- Add `frame: "gold"` or `frame: "rainbow"` to a single card to give it that border.
 
 ## Full-picture cards
 In `cards.js`, add `art: "full"` to any card to make its picture fill the card, or `art: "framed"` to use the normal layout. Without it, the card follows its rarity. In the **Make cards** tab, the **Layout** switch does the same thing. Tall pictures work best for full-picture cards.
