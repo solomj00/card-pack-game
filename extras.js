@@ -292,5 +292,6 @@
   // ---------- Start up ----------
   streak(); todaysQuests(); paintLevel(); paintBadge(); checkAch();
   setInterval(() => { todaysQuests(); paintBadge(); if (!$("rewardsView").hidden) paintRewards(); }, 60e3);
+  G.on("pictures", () => { if (!$("shopView").hidden) paintShop(); if (!$("rewardsView").hidden) paintRewards(); });
   window.CardExtras = { paint(view) { if (view === "shop") paintShop(); if (view === "rewards") paintRewards(); } };
 }

@@ -292,5 +292,6 @@
   $("pending").addEventListener("click", (e) => { const b = e.target.closest("[data-cancel]"); if (b) cancelOffer(b.dataset.cancel); });
   setInterval(() => { if (!$("martView").hidden) paintStalls(); }, 60e3);
 
+  G.on("pictures", paint);
   window.CardMart = { paint };
 }

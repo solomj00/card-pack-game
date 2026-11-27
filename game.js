@@ -204,7 +204,13 @@
       if (h >= 3) [523, 659, 784].forEach((f) => tone(f, .5, 1.2, "sine", .07));
     },
   };
-  const paintSound = () => { const b = $("sound"); b.textContent = "Sound: " + (soundOn ? "on" : "off"); b.setAttribute("aria-pressed", soundOn); };
+  const paintSound = () => {
+    const b = $("sound");
+    b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/>${soundOn
+      ? '<path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+      : '<path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'}</svg><span class="lbl-long">Sound: ${soundOn ? "on" : "off"}</span>`;
+    b.setAttribute("aria-pressed", soundOn); b.setAttribute("aria-label", "Sound " + (soundOn ? "on" : "off"));
+  };
   $("sound").onclick = () => { soundOn = !soundOn; try { localStorage.setItem(SET.saveKey + "-sound", soundOn ? "on" : "off"); } catch (e) {} paintSound(); };
   paintSound();
 
@@ -349,10 +355,11 @@
     $("coinBal").textContent = fmt(save.coins);
     const left = freeWait(), btn = $("freeCoins");
     btn.classList.toggle("wait", left > 0);
-    if (left <= 0) { btn.disabled = false; btn.innerHTML = `<i class="wheel-ic" aria-hidden="true"></i>Spin the wheel`; }
+    if (left <= 0) { btn.disabled = false; btn.innerHTML = `<i class="wheel-ic" aria-hidden="true"></i><span class="lbl-long">Spin the wheel</span><span class="lbl-short">Spin</span>`; }
     else {
       const mins = Math.ceil(left / 60e3), h = Math.floor(mins / 60), m = mins % 60;
-      btn.disabled = false; btn.textContent = `Next spin in ${h ? h + "h" : ""}${h && m ? " " : ""}${m || !h ? m + "m" : ""}`;
+      const t = `${h ? h + "h" : ""}${h && m ? " " : ""}${m || !h ? m + "m" : ""}`;
+      btn.disabled = false; btn.innerHTML = `<i class="wheel-ic" aria-hidden="true"></i><span class="lbl-long">Next spin in ${t}</span><span class="lbl-short">${t}</span>`;
     }
   }
   function earn(n) {
@@ -404,7 +411,7 @@
     const left = freeWait(), ready = left <= 0 && !spinning;
     $("spinBtn").disabled = !ready; $("spinHub").disabled = !ready;
     if (!spinning) $("wheelMsg").innerHTML = left > 0
-      ? `Next spin in <b>${$("freeCoins").textContent.replace("Next spin in ", "")}</b>. You can spin once every ${spinHours()} hours.`
+      ? `Next spin in <b>${$("freeCoins").querySelector(".lbl-short")?.textContent || ""}</b>. You can spin once every ${spinHours()} hours.`
       : `Spin to win up to <b>${fmt(Math.max(...wheelSlices().map((s) => s.coins)))}</b> coins!`;
   }
   function openWheel() {
