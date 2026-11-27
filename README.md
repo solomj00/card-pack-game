@@ -64,7 +64,7 @@ On the **Make cards** tab, players turn their own pictures into cards. They can:
 - Set **Layout** to **Finished card** if a picture is already a complete card with its name and attacks printed on it. The picture is shown as the whole card, and the HP, move and damage fields are hidden. Card-shaped pictures (about 5 by 7) switch to this layout automatically.
 - If you add built-in cards to `cards.js`, an **Also use the sample cards** switch appears here. Turn it off to play with only your own cards.
 
-Pictures are shrunk before saving, so a browser can hold well over 100 cards. Cards are saved in that browser only. To give everyone the same cards, add them to `cards.js` instead (see "Add a card" above).
+Pictures are saved in the browser's picture storage (IndexedDB), which holds far more than normal storage, usually hundreds of cards or more. Older saves that kept pictures in normal storage are moved over automatically. Cards are saved in that browser only. To give everyone the same cards, add them to `cards.js` instead (see "Add a card" above).
 
 ## Build a pack
 Players make their own packs on the **Build a pack** tab. They can choose:

@@ -30,6 +30,65 @@
     : [];
 
   // Packs made in the Build-a-pack workshop (saved in this browser)
+  // =================== Picture storage ===================
+  // Pictures are big, and the browser's normal storage only holds about 5 MB, so pictures
+  // live in IndexedDB (usually hundreds of MB). The card lists keep a small "idb:..." note
+  // in their place. While the page runs, each picture is a blob: address in memory.
+  const IMG = { db: null, url: {}, key: {} };          // url[key] = blob address, key[address] = key
+  const openDB = () => new Promise((ok, bad) => {
+    if (IMG.db) return ok(IMG.db);
+    if (!window.indexedDB) return bad(new Error("no IndexedDB"));
+    const r = indexedDB.open(SET.saveKey + "-pictures", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("img");
+    r.onsuccess = () => ok((IMG.db = r.result));
+    r.onerror = () => bad(r.error);
+  });
+  const tx = (mode, fn) => openDB().then((db) => new Promise((ok, bad) => {
+    const t = db.transaction("img", mode), out = fn(t.objectStore("img"));
+    t.oncomplete = () => ok(out && out.result); t.onerror = () => bad(t.error); t.onabort = () => bad(t.error);
+  }));
+  const toBlob = (d) => { const [h, b64] = d.split(","), bin = atob(b64), a = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: (h.match(/data:(.*?);/) || [])[1] || "image/jpeg" }); };
+  const remember = (key, blob) => {
+    if (IMG.url[key]) { delete IMG.key[IMG.url[key]]; URL.revokeObjectURL(IMG.url[key]); }
+    const u = URL.createObjectURL(blob); IMG.url[key] = u; IMG.key[u] = key; return u;
+  };
+  // Put a picture away and get back the small note to save in its place
+  async function stashPic(key, src) {
+    if (!src) return "";
+    if (src.startsWith("idb:")) return src;
+    if (src.startsWith("blob:")) return IMG.key[src] ? "idb:" + IMG.key[src] : src;
+    if (!src.startsWith("data:")) return src;                       // e.g. "images/x.png"
+    const blob = toBlob(src);
+    await tx("readwrite", (s) => s.put(blob, key));
+    remember(key, blob);
+    return "idb:" + key;
+  }
+  const liveSrc = (src) => (src && src.startsWith("idb:") ? IMG.url[src.slice(4)] || "" : src || "");
+  // Save the card list: pictures to IndexedDB, everything else to normal storage
+  async function persistCards() {
+    const out = [];
+    for (const c of myCards) {
+      const ref = await stashPic("card:" + c.id, c.image || c._img);
+      if (ref.startsWith("idb:") && liveSrc(ref)) { c.image = liveSrc(ref); delete c._img; }
+      const { custom, _img, ...rest } = c; out.push({ ...rest, image: ref });
+    }
+    localStorage.setItem(SET.saveKey + "-cards", JSON.stringify(out));
+    const keep = new Set(myCards.map((c) => "card:" + c.id));
+    const gone = Object.keys(IMG.url).filter((k) => k.startsWith("card:") && !keep.has(k));
+    if (gone.length) await tx("readwrite", (s) => gone.forEach((k) => s.delete(k)));
+  }
+  async function persistPacks() {
+    const out = [];
+    for (const p of myPacks) {
+      const ref = await stashPic("pack:" + p.id, p.coverImg || p._img);
+      if (ref.startsWith("idb:") && liveSrc(ref)) { p.coverImg = liveSrc(ref); delete p._img; }
+      const { _img, ...rest } = p; out.push({ ...rest, coverImg: ref });
+    }
+    localStorage.setItem(SET.saveKey + "-packs", JSON.stringify(out));
+  }
+  const storageFail = (e) => { console.error(e); toast("Couldn't save the picture. Your browser may be in private mode or out of space."); };
+
   let myPacks = [];
   try { const p = JSON.parse(localStorage.getItem(SET.saveKey + "-packs")); if (Array.isArray(p)) myPacks = p; } catch (e) {}
   const fixSlots = (list) => list.forEach((p) => (p.slots || []).forEach((s) => { s.min = norm(s.min); }));
@@ -51,8 +110,24 @@
     myCards.forEach((c) => { c.rarity = norm(c.rarity); });
     try { localStorage.setItem(SET.saveKey + "-cards", JSON.stringify(myCards)); } catch (e) {}
   }
+  // Until the pictures load, keep each "idb:" note aside so nothing tries to show it as a picture
+  myCards.forEach((c) => { if ((c.image || "").startsWith("idb:")) { c._img = c.image; c.image = ""; } });
+  myPacks.forEach((p) => { if ((p.coverImg || "").startsWith("idb:")) { p._img = p.coverImg; p.coverImg = ""; } });
   const syncCards = () => { CARDS.length = BUILT_IN; myCards.forEach((c) => { c.custom = true; CARDS.push(c); }); };
   syncCards();
+  // Load saved pictures, then move any pictures still kept in normal storage over to IndexedDB
+  const picsReady = (async () => {
+    try {
+      const keys = await tx("readonly", (s) => s.getAllKeys()), blobs = await tx("readonly", (s) => s.getAll());
+      (keys || []).forEach((k, i) => remember(k, blobs[i]));
+      myCards.forEach((c) => { if (c._img) { c.image = liveSrc(c._img); if (c.image) delete c._img; } });
+      myPacks.forEach((p) => { if (p._img) { p.coverImg = liveSrc(p._img); if (p.coverImg) delete p._img; } });
+      const inline = myCards.some((c) => (c.image || "").startsWith("data:")) || myPacks.some((p) => (p.coverImg || "").startsWith("data:"));
+      if (inline) { await persistCards(); await persistPacks(); }
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+    } catch (e) { console.error("Picture storage unavailable", e); }
+    emit("pictures");
+  })();
   // Players can switch the sample cards from cards.js off and play with only their own
   let useSamples = true;
   try { useSamples = localStorage.getItem(SET.saveKey + "-samples") !== "off"; } catch (e) {}
@@ -926,9 +1001,11 @@
     get useSamples() { return useSamples; },
     get builtInCount() { return BUILT_IN; },
     saveMyCards(list) {
-      try { localStorage.setItem(SET.saveKey + "-cards", JSON.stringify(list)); } catch (e) { return false; }
-      myCards = list; syncCards(); renderBinder(); return true;
+      myCards = list; syncCards(); renderBinder();
+      persistCards().catch(storageFail);
+      return true;
     },
+    picsReady, persistCards,
     setUseSamples(on) {
       useSamples = on;
       try { localStorage.setItem(SET.saveKey + "-samples", on ? "on" : "off"); } catch (e) {}
@@ -937,7 +1014,8 @@
     get myPacks() { return myPacks; },
     saveMyPacks(list) {
       myPacks = list;
-      try { localStorage.setItem(SET.saveKey + "-packs", JSON.stringify(list)); return true; } catch (e) { return false; }
+      persistPacks().catch(storageFail);
+      return true;
     },
     showPicker: showPack,
     // Open a pack straight away (used by "Open it now")
@@ -957,4 +1035,8 @@
 
   renderBinder();
   showPack();
+  on("pictures", () => {
+    renderBinder();
+    if (!$("playView").hidden && document.querySelector("#stage .picker:not(:has(.chosen)), #stage .empty-packs")) showPack();
+  });
 }

@@ -316,6 +316,7 @@
     if (play && location.hash) history.replaceState(null, "", location.pathname + location.search);
   }
   G.go = go;
+  G.on("pictures", () => { if (!$("workshop").hidden) { paintControls(); paintMine(); } });
   const route = () => go({ "#build": "build", "#make": "make", "#collection": "collection", "#shop": "shop", "#rewards": "rewards", "#mart": "mart" }[location.hash] || "play");
   addEventListener("hashchange", route);
   $("tabPlay").onclick = (e) => { e.preventDefault(); go("play"); G.showPicker(); };

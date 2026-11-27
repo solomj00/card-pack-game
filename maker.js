@@ -192,5 +192,6 @@
   });
   stage.addEventListener("pointerleave", () => { tilt.style.transform = ""; tilt.classList.remove("held"); });
 
+  G.on("pictures", () => { if (!$("maker").hidden) paint(); });
   window.CardMaker = { paint };
 }
