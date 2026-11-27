@@ -24,6 +24,7 @@
     id: null, name: "MY PACK", color: "#ff4f6d", color2: "#ffc929", pattern: "stripes", finish: "glossy",
     coverMode: "auto", coverCard: null, coverImg: "", artSize: "window", showName: true, count: 5,
     guarantee: RARITY_KEYS[1] || "", luck: 1, types: [], poolMode: "all", cards: [],
+    priceMode: "auto", price: 0,
   });
   let pickQ = "", pickR = "";
   let coverQ = "", coverFilter = "";   // "" = My cards when you have some, otherwise All cards
@@ -50,6 +51,7 @@
       types: st.poolMode === "types" && st.types.length ? st.types.slice() : undefined,
       cards: picked.length ? picked.map(String) : undefined,
       luck: st.luck, slots, about: bits.join(" · "),
+      ...(st.priceMode === "custom" ? { price: Math.max(0, Math.round(+st.price || 0)) } : {}),
     };
   }
   const fromPack = (p) => ({
@@ -57,6 +59,7 @@
     finish: p.finish || "matte", coverMode: p.coverMode || (p.coverImg ? "upload" : p.coverCard != null ? "card" : "auto"),
     coverCard: p.coverCard ?? null, coverImg: p.coverImg || "", artSize: p.artSize || "window", showName: p.showName !== false, count: p.slots.length,
     guarantee: (p.slots.find((x) => G.rank(x.min) >= 1) || {}).min || "", luck: p.luck || 1, types: p.types || [],
+    priceMode: typeof p.price === "number" ? "custom" : "auto", price: typeof p.price === "number" ? p.price : 0,
     poolMode: p.cards && p.cards.length ? "pick" : p.types && p.types.length ? "types" : "all", cards: (p.cards || []).map(String),
   });
 
@@ -84,7 +87,15 @@
     $("wsPreview").innerHTML = `<div class="pack big-pack" ${G.packAttrs(pack)}>${G.packFace(pack)}</div>`;
     $("wsOdds").innerHTML = `<div class="odds-title">Chance per pack</div>` + odds(pack).map(([r, p]) =>
       `<div class="odd"><span>${esc(r.label)} or better</span><span class="bar"><i style="width:${Math.max(2, p * 100)}%;background:${esc(r.glow || "#fff")}"></i></span><b>${pct(p)}</b></div>`).join("");
-    if (G.coinsOn) $("wsOdds").innerHTML += `<div class="odds-price"><span>Price</span><b><i class="coin" aria-hidden="true"></i>${G.priceOf(pack).toLocaleString()} a pack</b></div>`;
+    if (G.coinsOn) {
+      const price = G.priceOf(pack), back = G.packValue(pack);
+      $("wsOdds").innerHTML += `<div class="odds-price"><span>Price</span><b><i class="coin" aria-hidden="true"></i>${price ? price.toLocaleString() + " a pack" : "Free"}</b></div>
+        <div class="odds-price sub"><span>Avg. value back</span><b>${Math.round(back).toLocaleString()}${price ? ` <small class="${back >= price ? "good" : ""}">(${Math.round((back / price) * 100)}% of price)</small>` : ""}</b></div>`;
+      const { price: _p, ...noPrice } = pack;
+      $("wsPriceNote").textContent = s.priceMode === "auto"
+        ? "Worked out from the cards, guaranteed hit and luck. Change those and the price follows."
+        : `The automatic price would be ${G.priceOf(noPrice).toLocaleString()}. 0 makes the pack free.`;
+    }
   }
 
   const chip = (group, val, label, on) =>
@@ -99,6 +110,10 @@
     $("wsFinish").innerHTML = FINISHES.map(([v, l]) => chip("finish", v, l, s.finish === v)).join("");
     $("wsCoverMode").innerHTML = COVERS.map(([v, l]) => chip("coverMode", v, l, s.coverMode === v)).join("");
     $("wsLuck").innerHTML = LUCK.map(([v, l]) => chip("luck", v, l, s.luck === v)).join("");
+    $("wsPriceF").hidden = !G.coinsOn;
+    $("wsPriceMode").innerHTML = [["auto", "Auto"], ["custom", "Set my own"]].map(([v, l]) => chip("priceMode", v, l, s.priceMode === v)).join("");
+    $("wsPriceRow").hidden = s.priceMode !== "custom";
+    if (document.activeElement !== $("wsPrice")) $("wsPrice").value = s.price;
     $("wsPoolMode").innerHTML = POOLS.map(([v, l]) => chip("poolMode", v, l, s.poolMode === v)).join("");
     $("wsTypesF").hidden = s.poolMode !== "types";
     $("wsPickF").hidden = s.poolMode !== "pick";
@@ -191,6 +206,7 @@
     } else if (b.dataset.g) {
       const v = b.dataset.g === "luck" ? +b.dataset.v : b.dataset.v;
       s[b.dataset.g] = v;
+      if (b.dataset.g === "priceMode" && v === "custom" && !s.price) { const { price, ...auto } = toPack({ ...s, priceMode: "auto" }); s.price = G.priceOf(auto); }
       if (b.dataset.g === "coverMode" && v === "card" && s.coverCard == null) {
         const first = G.myCards.find((c) => c.image) || G.cards[0];
         if (first) s.coverCard = first.id;
@@ -214,6 +230,7 @@
   $("wsC2").addEventListener("input", (e) => { s.color2 = e.target.value; paintPreview(); });
   $("wsCount").addEventListener("input", (e) => { s.count = +e.target.value; $("wsCountOut").textContent = s.count; paintPreview(); });
   $("wsShowName").addEventListener("change", (e) => { s.showName = e.target.checked; paintPreview(); });
+  $("wsPrice").addEventListener("input", (e) => { s.price = Math.max(0, Math.round(+e.target.value || 0)); paintPreview(); });
   $("wsGuar").addEventListener("change", (e) => { s.guarantee = e.target.value; paintPreview(); });
 
   // Upload: shrink the picture so lots of packs fit in browser storage

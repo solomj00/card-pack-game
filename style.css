@@ -860,3 +860,13 @@ body.quake .main { animation: quake .7s ease-out; }
 .bad { color: #ff8fa8; font-weight: 600; }
 @media (max-width: 900px) { .friend { grid-template-columns: minmax(0, 1fr); } }
 .stall header { margin: 0; padding: 0; max-width: none; justify-content: flex-start; flex-wrap: nowrap; }
+
+/* custom pack price */
+.price-row { display: flex; align-items: center; gap: 8px; }
+.price-row input { width: 140px; min-height: 44px; font: 600 16px var(--body-font); border-radius: 10px; border: 1px solid var(--line); background: #0f1626; color: var(--text); padding: 8px 12px; }
+.price-row input:focus-visible { outline: 2px solid var(--accent); }
+.odds-price.sub { border-top: 0; padding-top: 0; margin-top: -4px; font-weight: 600; color: var(--muted); }
+.odds-price.sub b { color: var(--text); }
+.odds-price small { color: var(--muted); font-weight: 600; }
+.odds-price small.good { color: #5fe0a5; }
+.free { color: #5fe0a5; }

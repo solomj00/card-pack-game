@@ -489,7 +489,7 @@
     return `<div class="pick">
       <button class="pack" data-pack="${i}" ${packAttrs(pack)} aria-label="Open a ${esc(pack.name)} pack">${packFace(pack, i)}</button>
       <p class="about">${pack.showName === false ? `<b class="pack-name">${esc(pack.name)}</b><br>` : ""}${pack.mine ? '<span class="yours">Yours</span> ' : ""}${esc(pack.about || "")}</p>
-      ${CO ? `<p class="pack-price">${coinTag(priceOf(pack))} a pack <span class="ev">· avg. value back ${fmt(packValue(pack))}</span></p>` : ""}
+      ${CO ? `<p class="pack-price">${priceOf(pack) ? coinTag(priceOf(pack)) + " a pack" : '<b class="free">Free</b>'} <span class="ev">· avg. value back ${fmt(packValue(pack))}</span></p>` : ""}
       <button type="button" class="mini-btn" data-box="${i}">Open a box of 10${CO ? " · " + coinTag(boxPrice(pack)) : ""}</button></div>`;
   }
 
@@ -1029,6 +1029,7 @@
       return true;
     },
     priceOf, boxPrice, get coinsOn() { return !!CO; },
+    packValue,
     on, emit, rollPack, spend, earn, store, toast, fmt, coinTag, sellValue, buyPrice, buyCard, inspect, packValue, celebrate, renderBinder,
     rarityOf, get save() { return save; }, get allPacks() { return allPacks(); }, get lastPack() { return lastPack; }, set lastPack(p) { lastPack = p; },
   };

@@ -99,7 +99,8 @@ If there are no packs yet, the site starts in the workshop.
 
 ## Coins
 Packs cost coins. New players start with 500.
-- **Prices** depend on how many cards a pack has, its guaranteed hit and its luck. A basic 5-card pack is 35 coins. Each pack shows its price, and the pack builder shows the price as you design. A box of 10 costs 10% less than 10 packs.
+- **Set your own price:** in **Build a pack → Price per pack**, choose **Set my own** and type any amount. 0 makes the pack free. **Auto** goes back to the calculated price. The builder shows the pack's average value back next to the price, so you can see if it's a good deal.
+- **Auto prices** depend on how many cards a pack has, its guaranteed hit and its luck. A basic 5-card pack is 35 coins. Each pack shows its price, and the pack builder shows the price as you design. A box of 10 costs 10% less than 10 packs.
 - **Prize wheel:** spin it every 4 hours with the button in the sidebar. Prizes run from 250 up to a 100,000-coin jackpot. Each slice is drawn as big as its chance, so the thin gold jackpot slice really is rare, about 1 in 50 spins.
 - **Selling:**
   - **Right after opening:** every card in the results has a **Sell** button, and **Sell all** sells the whole pack.

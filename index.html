@@ -6,7 +6,7 @@
   <title>Card Opening Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style.css?v=21">
 </head>
 <body>
 <canvas id="confetti" aria-hidden="true"></canvas>
@@ -171,6 +171,15 @@
               <input type="range" id="wsCount" min="1" max="10" value="5"></label>
             <label class="field">Guaranteed hit<select id="wsGuar"></select></label>
             <div class="field">Luck<div class="chips" id="wsLuck" role="radiogroup"></div></div>
+            <div class="field" id="wsPriceF">Price per pack
+              <div class="chips" id="wsPriceMode" role="radiogroup"></div>
+              <div class="price-row" id="wsPriceRow" hidden>
+                <span class="coin" aria-hidden="true"></span>
+                <input type="number" id="wsPrice" min="0" max="1000000" step="5" inputmode="numeric" aria-label="Price in coins">
+                <span class="muted">coins</span>
+              </div>
+              <small id="wsPriceNote"></small>
+            </div>
             <div class="field">Which cards can come out<div class="chips" id="wsPoolMode" role="radiogroup"></div></div>
             <div class="field" id="wsTypesF">Card types<div class="chips" id="wsTypes"></div><small>None selected = every type.</small></div>
             <div class="field" id="wsPickF">
@@ -317,11 +326,11 @@
 </dialog>
 
 <!-- Load order matters: your cards first, then the game -->
-<script src="cards.js?v=20"></script>
-<script src="game.js?v=20"></script>
-<script src="builder.js?v=20"></script>
-<script src="maker.js?v=20"></script>
-<script src="extras.js?v=20"></script>
-<script src="mart.js?v=20"></script>
+<script src="cards.js?v=21"></script>
+<script src="game.js?v=21"></script>
+<script src="builder.js?v=21"></script>
+<script src="maker.js?v=21"></script>
+<script src="extras.js?v=21"></script>
+<script src="mart.js?v=21"></script>
 </body>
 </html>
